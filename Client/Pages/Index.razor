@@ -1,9 +1,31 @@
 ﻿@page "/"
 @inject NavigationManager NavigationManager
+@inject ILogger<Index> _logger
+
+
+<h3>出荷検品(トータル)</h3>
+<h5>最初に下のリンクよりGoogleログインを行ってください</h5>
+
+<a class="button is-danger" href="/.auth/login/google?post_login_redirect_uri=/ECOrder/ShipItemScan">googleログイン</a>
+
+
+
+
 
 @code {
+    protected override async Task OnInitializedAsync()
+    {
+        // await _jsRuntime.InvokeVoidAsync("JsBarcode(\"#barcode\", \"Hi world!\");");
+    }
+
     protected override void OnInitialized()
     {
-        NavigationManager.NavigateTo("/products");
+        // NavigationManager.NavigateTo("/create_task");
     }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        _logger.LogInformation("after rendered.");
+    }
+
 }
