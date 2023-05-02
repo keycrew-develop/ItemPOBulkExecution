@@ -166,6 +166,7 @@ p.card-header-title {
 }
 
 .modal-card-body,
+
 .modal-card-head {
     text-align: center;
 }
@@ -195,3 +196,12 @@ body {
 code {
     font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
 }
+
+.alert-row td {
+    background-color: #fdff91 !important;
+}
+
+.scanDone-row td {
+    background-color: #99FFFF !important;
+}
+

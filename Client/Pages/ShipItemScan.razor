@@ -4,72 +4,107 @@
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
 @inject ILogger<ShipItemScan> logger
+@using System.Text.RegularExpressions;
 
-<select class="form-group col-6" id="ScanType" @bind="@ScanType" required disabled>
-    <option value="N17">トータル検品</option><!--!-->
-    <option value="N18">オーダー検品</option><!--!-->
-    <option value="N19">AMR検品</option><!--!-->
-</select>
-<div class="form-row">
-    <div class="form-group col-6">
-        <label class="mb-0" for="BarCodeValue">バーコード値</label>
-        <input class="form-control" id="BarCodeValue"@oninput="BarCodeScan" placeholder="バーコードをスキャン" autofocus />
+
+
+<div class="row">
+    <div class="col-4">
+        <select class="form-control" id="ScanType" @bind="@ScanType" required disabled>
+            <option value="N17">トータル検品</option><!--!-->
+            <option value="N18">オーダー検品</option><!--!-->
+            <option value="N19">AMR検品</option><!--!-->
+        </select>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th class="align-top">ピッキングNo</th>
+                    <th class="align-top">お届け先名</th>
+                    <th>@PickingList.Count() 件</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (PickingList.Count > 0)
+                {
+                    @foreach (var rowObj in PickingList)
+                    {
+                        <tr>
+                            <td class="align-middle sc-table-cell" style="width: 35%; max-width: 0;">
+                                <div>@rowObj.PickingNo</div>
+                            </td>
+                            <td class="align-middle sc-table-cell" style="width: 45%; max-width: 0;">
+                                <div>@rowObj.ShippingName</div>
+                            </td>
+                            <td style="width: 20%; max-width: 0;"></td>
+                        </tr>
+                    }
+                }
+
+            </tbody>
+        </table>
+    </div>
+    <div class="col-8">
+        <div class="form-row">
+            <div class="form-group col-6">
+                <label class="mb-0" for="BarCodeValue">バーコード値</label>
+                <input class="form-control" id="BarCodeValue" @bind-value="@BarCodeValue" @bind-value:event="oninput" @onkeyup="@BarCodeScan" placeholder="バーコードをスキャン" autofocus />
+            </div>
+        </div>
+        <div class="form-row">
+            <select class="form-group col-6" id="ShippingPointCode" @bind="@ShippingPointCode" required>
+                <option value="100">Yashio Dock</option><!--!-->
+                <option value="110" selected>Sugito Dock</option><!--!-->
+            </select>
+            <div class="form-group col-6">
+                <button class="btn btn-primary rounded-pill ml-3" style="background-color: #00B8BE; border-color: #00B8BE;" @onclick="@SkipItemScan"><span class="mx-2">検品スキップ</span></button>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group col-6">
+                <label class="mb-0" for="ShippingGroupName">出荷グループ名</label>
+                <input class="form-control" id="ShippingGroupName" @bind-value="@PickingDetail.ShippingGroupName" placeholder="" disabled />
+            </div>
+            <div class="form-group col-6">
+                <label class="mb-0" for="ShipID">出荷管理No</label>
+                <input class="form-control" id="ShipID" @bind-value="@PickingDetail.ShipID" placeholder="" disabled />
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group col-6">
+                <label class="mb-0" for="CompanyName">会社名</label>
+                <input class="form-control" id="CompanyName" @bind-value="@PickingDetail.CompanyName" placeholder="" disabled />
+            </div>
+            <div class="form-group col-6">
+                <label class="mb-0" for="OrderNo">オーダーNo</label>
+                <input class="form-control" id="OrderNo" @bind-value="@PickingDetail.OrderNoList" placeholder="" disabled />
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group col-6">
+                <label class="mb-0" for="TransporterName">運送会社名</label>
+                <input class="form-control" id="TransporterName" @bind-value="@PickingDetail.TransporterName" placeholder="" disabled />
+            </div>
+            <div class="form-group col-6">
+                <label class="mb-0" for="ShippingName">お届け先名</label>
+                <input class="form-control" id="OrderNo" @bind-value="@PickingDetail.ShippingName" placeholder="" disabled />
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group col-6">
+                <label class="mb-0" for="PickingDescription">出荷指示特記事項</label>
+                <input class="form-control" id="PickingDescritption" @bind-value="@PickingDetail.PickingDescription" placeholder="" disabled />
+            </div>
+            <div class="form-group col-6">
+                <label class="mb-0" for="ECReceiptNo">領収書No</label>
+                <input class="form-control" id="ECReceiptNo" @bind-value="@PickingDetail.ReceiptNoList" placeholder="" disabled />
+            </div>
+        </div>
     </div>
 </div>
-<div class="form-row">
-    <select class="form-group col-6" id="ShippingPointCode" @bind="@ShippingPointCode" required disabled>
-        <option value="100">Yashio Dock</option><!--!-->
-        <option value="110" selected>Sugito Dock</option><!--!-->
-    </select>
-    <div class="form-group col-6">
-        <button class="btn btn-primary rounded-pill ml-3" style="background-color: #00B8BE; border-color: #00B8BE;" @onclick="@SkipItemScan"><span class="mx-2">検品スキップ</span></button>
-    </div>
-</div>
-
-<div class="form-row">
-    <div class="form-group col-6">
-        <label class="mb-0" for="ShippingGroupName">出荷グループ名</label>
-        <input class="form-control" id="ShippingGroupName" @bind-value="@PickingDetail.ShippingGroupName" placeholder="出荷グループ名を入力" disabled />
-    </div>
-    <div class="form-group col-6">
-        <label class="mb-0" for="ShipID">出荷管理No</label>
-        <input class="form-control" id="ShipID" @bind="@PickingDetail.ShipID" placeholder="出荷管理Noを入力" disabled />
-    </div>
-</div>
-
-<div class="form-row">
-    <div class="form-group col-6">
-        <label class="mb-0" for="CompanyName">会社名</label>
-        <input class="form-control" id="CompanyName" @bind-value="@PickingDetail.CompanyName" placeholder="会社名を入力" disabled />
-    </div>
-    <div class="form-group col-6">
-        <label class="mb-0" for="OrderNo">オーダーNo</label>
-        <input class="form-control" id="OrderNo" @bind-value="@PickingDetail.OrderNo" placeholder="オーダーNoを入力" disabled />
-    </div>
-</div>
-
-<div class="form-row">
-    <div class="form-group col-6">
-        <label class="mb-0" for="TransporterName">運送会社名</label>
-        <input class="form-control" id="TransporterName" @bind-value="@PickingDetail.TransporterName" placeholder="運送会社を入力" disabled />
-    </div>
-    <div class="form-group col-6">
-        <label class="mb-0" for="ShippingName">届け先名</label>
-        <input class="form-control" id="OrderNo" @bind-value="@PickingDetail.OrderNo" placeholder="届け先名を入力" disabled />
-    </div>
-</div>
-
-<div class="form-row">
-    <div class="form-group col-6">
-        <label class="mb-0" for="PickingDescription">出荷指示特記事項</label>
-        <input class="form-control" id="PickingDescritption" @bind-value="@PickingDetail.PickingDescription" placeholder="出荷指示特記事項を入力" disabled />
-    </div>
-    <div class="form-group col-6">
-        <label class="mb-0" for="ECReceiptNo">領収書No</label>
-        <input class="form-control" id="ECReceiptNo" @bind-value="@PickingDetail.ECReceiptNo" placeholder="領収書Noを入力" disabled />
-    </div>
-</div>
-
 <table class="table">
     <thead>
         <tr>
@@ -79,15 +114,16 @@
             <th class="align-top">商品名</th>
             <th class="align-top">出荷数</th>
             <th class="align-top">検品数</th>
+            <th>SKU数：@PickingDetail.shipItemList.Count() 件</th>
         </tr>
     </thead>
     <tbody>
-        @if(PickingDetail.shipItemList != null)
+        @if(PickingDetail.shipItemList.Count > 0)
         {
             @foreach (var rowObj in PickingDetail.shipItemList)
             {
-                <tr class="@DetailRowCssClass(rowObj.DelivSlipNonPrintFlag)">
-                    <td class="align-middle" style="width: 6%">
+                <tr class="@DetailRowCssClass(rowObj)">
+                    <td class="align-middle" style="width: 15%">
                         @if (String.IsNullOrEmpty(rowObj.ItemImage))
                         {
                             <img src="/img/noimg.svg" alt="" style="object-fit: contain; width: 80px; height: 80px;">
@@ -97,7 +133,7 @@
                             <img src="@rowObj.ItemImage" alt="" style="object-fit: contain; width: 80px; height: 80px;">
                         }
                     </td>
-                    <td class="align-middle sc-table-cell" style="width: 20%; max-width: 0;">
+                    <td class="align-middle sc-table-cell" style="width: 15%; max-width: 0;">
                         <div>@rowObj.GTINCode</div>
                     </td>
                     <td class="align-middle sc-table-cell" style="width: 20%; max-width: 0;">
@@ -106,12 +142,13 @@
                     <td class="align-middle" style="width: 20%; max-width: 0">
                         <div class="sc-table-ellipsis">@rowObj.ItemName</div>
                     </td>
-                    <td class="align-middle" style="width: 10%">
+                    <td class="align-middle" style="width: 7%">
                         <div>@rowObj.QtyPrint 個</div>
                     </td>
-                    <td class="align-middle" style="width: 10%">
+                    <td class="align-middle" style="width: 7%">
                         <div>@rowObj.QtyPick 個</div>
                     </td>
+                    <td class="align-middle" style="width: 16%"></td>
                 </tr>
             }
         }
@@ -121,80 +158,120 @@
 @*<button class="btn btn-primary rounded-pill ml-3" style="background-color: #00B8BE; border-color: #00B8BE;" @onclick="@ExportFile"><span class="mx-2">入荷済み情報をエクスポート</span></button>*@
 
 @code {
-    private PickingDetail PickingDetail = new PickingDetail();
+    private List<PickingHead> PickingList = new List<PickingHead>();
+    private PickingDetail PickingDetail = new PickingDetail() {
+            shipItemList = new List<ShipItem>()
+    };
     private List<PickingDetail> PickingDetailList = new List<PickingDetail>();
     private string ScanType;
-    private string ShippingPointCode;
+    private string ShippingPointCode = "110";
 
     private bool isClickProcessingFlag = false;
     private bool searchProcessingFlag = false;
-    private string BarCodeValue = "";
+    private string BarCodeValue = null;
 
-    protected override async Task OnInitializedAsync()
+    private async Task BarCodeScan(KeyboardEventArgs e)
     {
-        PickingDetail.ShippingGroupName = null;
-        PickingDetail.CompanyName = null;
-        PickingDetail.OrderNo = null;
-        PickingDetail.TransporterName = null;
-        PickingDetail.ShippingName = null;
-        PickingDetail.PickingDescription = null;
-        PickingDetail.ECReceiptNo = 0;
-        PickingDetail.shipItemList = null;
-        //PickingDetail.shipItemList = new List<ShipItemList>();
-        //    PickingDetail.shipItemList.Add(
-        //        new ShipItemList
-        //            {
-        //                GTINCode = null,
-        //                ItemNo = null,
-        //                ItemImage = null,
-        //                DelivSlipNonPrintFlag = null,
-        //                ItemName = null,
-        //                QtyPrint = 0,
-        //                QtyPick = 0
-        //});
-    }
-
-    private async Task BarCodeScan(ChangeEventArgs args)
-    {
-        BarCodeValue = (string)args.Value;
-        //商品明細がない場合、検品開始時のスキャンモードになる
-        if (PickingDetail.shipItemList == null && BarCodeValue.Length >= 13)
+        if (e.Code == "Enter" || e.Code == "NumpadEnter")
         {
-            if (BarCodeValue.Length == 13)
+            //半角英数字、ハイフン、アンダーバーのみ許容する
+            if (!Regex.IsMatch(BarCodeValue, @"^[0-9a-zA-Z-_]+$"))
             {
-                await GetPickingData();
+                await JSRuntime.InvokeAsync<string>("alert", "読み取り不可の文字が入力されています。");
+                BarCodeValue = "";
+                return;
             }
+            //スキャナーがスタートキャラクタを読み取る仕様の場合、頭と最後の「A」を取り除く
+            BarCodeValue = BarCodeValue.Replace("A", "");
+            //商品明細がない場合、検品開始時のスキャンモードになる
+            if (PickingDetail.shipItemList.Count == 0)
+            {
+                logger.LogInformation(BarCodeValue);
+                if (BarCodeValue.Length == 13)
+                {
+                    await GetPickingHead();
+                }
+                else
+                {
+                    BarCodeValue = null;
+                    await JSRuntime.InvokeAsync<string>("alert", "トータルピッキングリストのバーコードではありません。");
+                }
+            }
+            //商品JANコードのスキャンモード
             else
             {
-                await JSRuntime.InvokeAsync<string>("alert", "トータルピックのバーコードではありません。");
+                //検品スキップバーコード読み取り
+                if(BarCodeValue == "ssskipppp")
+                {
+                    await SkipItemScan();
+                }
+                //チラシユニバーサルコード読み取り
+                else if (BarCodeValue == "ffflyerrr")
+                {
+                    await ShipItemCountUp(PickingDetail.shipItemList.Where(item => item.DelivSlipNonPrintFlag == true).ToList());
+                }
+                else
+                {
+                    //JANコードが同一の商品を抽出する
+                    var scanItemList = PickingDetail.shipItemList.Where(item => item.GTINCode == BarCodeValue).ToList();
+                    //商品コードでも抽出できないか確認する
+                    if (scanItemList.Count() == 0)
+                    {
+                        PickingDetail.shipItemList.Where(item => item.ItemNo == BarCodeValue).ToList();
+                    }
+
+                    //該当商品がない場合、エラーポップアップを出す
+                    if (scanItemList.Count() == 0)
+                    {
+                        BarCodeValue = "";
+                        await JSRuntime.InvokeAsync<string>("alert", "不正なバーコードを読み取りました。");
+                        return;
+                    }
+                    //検品カウントアップ
+                    else
+                    {
+                        await ShipItemCountUp(scanItemList);
+
+                    }
+                }
             }
         }
-
-
     }
 
-    //検品スキップ
-    private async Task SkipItemScan()
-    {
-
-    }
-
-
-    private async Task GetPickingData()
+    private async Task GetPickingHead()
     {
         searchProcessingFlag = true;
-        PickingDetailList = await Http.GetFromJsonAsync<List<PickingDetail>>($"api/pickingData/show/?BarCodeValue={BarCodeValue}");
+        logger.LogInformation(ShippingPointCode);
+        PickingList = await Http.GetFromJsonAsync<List<PickingHead>>($"api/pickingHead/show/?BarCodeValue={BarCodeValue}&ShippingPointCode={ShippingPointCode}");
+        if (PickingList.Count == 0)
+        {
+            logger.LogInformation("バーコード対象外");
+            await JSRuntime.InvokeAsync<string>("alert", "該当のバーコードは検品済み、もしくは対象外です。");
+            BarCodeValue = "";
+            logger.LogInformation(BarCodeValue);
+            return;
+        }
+        else
+        {
+            await GetPickingDetail();
+        }
+
+    }
+
+    private async Task GetPickingDetail()
+    {
+        PickingDetailList = await Http.GetFromJsonAsync<List<PickingDetail>>($"api/pickingDetail/show/?ShipID={PickingList.First().CompanyCode + PickingList.First().PickingNo}");
+
         logger.LogInformation("API Execute");
         PickingDetail = PickingDetailList.First();
-        logger.LogInformation("PickingDetail Bind");
         //商品明細行をクリアする
         if (PickingDetail.shipItemList != null)
         {
             PickingDetail.shipItemList.Clear();
         }
-        logger.LogInformation("ShipItem Clear");
         var shipItemList = new List<ShipItem>();
-        foreach(var row in PickingDetailList)
+        //商品明細の値をセットする
+        foreach (var row in PickingDetailList)
         {
             var shipItem = new ShipItem();
             shipItem.GTINCode = row.GTINCode;
@@ -206,23 +283,91 @@
             shipItem.QtyPick = row.QtyPick;
             shipItemList.Add(shipItem);
         }
-        logger.LogInformation("ShipItem Bind");
         PickingDetail.shipItemList = shipItemList;
-        logger.LogInformation(PickingDetail.ShipID);
-
+        BarCodeValue = "";
         searchProcessingFlag = false;
     }
 
-
-    private string DetailRowCssClass(string siteAllocateState)
+    //検品カウントアップ
+    private async Task ShipItemCountUp(List<ShipItem> scanItemList)
     {
-        if (siteAllocateState.Equals("商品"))
+
+        var scanItem = scanItemList.Where(item => item.QtyPrint != item.QtyPick);
+        if (scanItem.Count() == 0)
         {
-            return "";
+            await JSRuntime.InvokeAsync<string>("alert", $"{BarCodeValue}は数量オーバーです。");
+            BarCodeValue = "";
         }
         else
         {
+            scanItem.First().QtyPick++;
+            BarCodeValue = "";
+            StateHasChanged();
+        }
+        //現在のピッキング対象が検品完了した場合
+        if (PickingDetail.shipItemList.Count() == PickingDetail.shipItemList.Where(item => item.QtyPrint == item.QtyPick).ToList().Count())
+        {
+            bool OKFlag = await JSRuntime.InvokeAsync<bool>("confirm", "検品が完了しました。次の検品に進んでください。");
+            if (OKFlag)
+            {
+                //検品ステータスを更新する
+                await PickingDetailUpdate();
+            }
+        }
+        //全てのピッキング対象が検品完了した場合、完了ポップアップを出す
+        if(PickingList.Count == 0){
+            await JSRuntime.InvokeAsync<string>("alert", $"検品がすべて完了しました。");
+            //画面初期化
+            PickingDetail = new PickingDetail()
+            {
+                shipItemList = new List<ShipItem>()
+            };
+        }
+    }
+
+    //検品スキップ
+    private async Task SkipItemScan()
+    {
+        bool OKFlag = await JSRuntime.InvokeAsync<bool>("confirm", "検品スキップしますか？\r\n スキップしたピッキングは検品済みになります。");
+        if (OKFlag)
+        {
+            //現在は検品スキップの挙動が固まっていないため、検品済みにする
+            await PickingDetailUpdate();
+        }
+    }
+
+    private async Task PickingDetailUpdate()
+    {
+        BarCodeValue = "";
+        var PickingData = PickingList.Where(pd => pd.CompanyCode + pd.PickingNo == PickingDetail.ShipID).ToList().First();
+        var data = new { ShipID = PickingData.CompanyCode + PickingData.PickingNo };
+        var result = await Http.PutAsJsonAsync(
+            $"api/pickingDetail/update/{PickingData.CompanyCode + PickingData.PickingNo}",
+            data);
+        //検品完了したピッキングデータをHeadから削除する
+        PickingList.Remove(PickingData);
+        //まだ検品残がある場合Detailを抽出する
+        if (PickingList.Count > 0)
+        {
+            await GetPickingDetail();
+        }
+    }
+
+    private string DetailRowCssClass(ShipItem shipItem)
+    {
+        //検品完了の場合、水色
+        if(shipItem.QtyPrint == shipItem.QtyPick)
+        {
+            return "scanDone-row";
+        }
+        //チラシの場合、黄色
+        else if (shipItem.DelivSlipNonPrintFlag)
+        {
             return "alert-row";
+        }
+        else
+        {
+            return "";
         }
     }
 }

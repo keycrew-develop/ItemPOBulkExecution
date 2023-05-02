@@ -33,35 +33,35 @@ using System.Net.Mime;
 
 namespace Api
 {
-    public class PickingData : ControllerBase
+    public class PickingDetail : ControllerBase
     {
 
         private readonly string defaultConnection = Environment.GetEnvironmentVariable("DefaultDBConnection");
 
-        [FunctionName("PickingDataShow")]
+        [FunctionName("PickingDetailShow")]
         public ObjectResult Run(
-                [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "pickingData/show")] HttpRequest req,
+                [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "pickingDetail/show")] HttpRequest req,
                 ILogger log)
         {
             try
             {
                 //ファイルの中身チェック
-                string BarCodeValue = req.Query["BarCodeValue"];
-                log.LogInformation(BarCodeValue);
-                var CompanyCode = BarCodeValue.Substring(0, 6);
-                var PickingNo = BarCodeValue.Substring(6, 7);
+                string ShipID = req.Query["ShipID"];
+                log.LogInformation(ShipID);
+                var CompanyCode = ShipID.Substring(0, 6);
+                var PickingNo = ShipID.Substring(6, 7);
                 var procedure = "[SFM_N17_DelivScan]";
                 var values = new
                 {
+                    Cmd = "PickingDetail",
                     CompanyCode = CompanyCode,
-                    PickingNo = PickingNo,
-                    Cmd = "PickingDetail"
+                    PickingNo = PickingNo
                 };
                 DBManager dbmanager = new DBManager();
                 dbmanager.DbConect(defaultConnection);
 
-                var pickingDetailList = new List<PickingDetail>();
-                pickingDetailList = dbmanager.sqlConnection.Query<PickingDetail>(
+                var pickingDetailList = new List<Data.PickingDetail>();
+                pickingDetailList = dbmanager.sqlConnection.Query<Data.PickingDetail>(
                     procedure, values, commandType: CommandType.StoredProcedure
                     ).ToList();
                 log.LogInformation(pickingDetailList.Count().ToString());
