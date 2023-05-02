@@ -1,0 +1,27 @@
+{
+    "navigationFallback": {
+        "rewrite": "/index.html",
+        "exclude": ["/_framework/*", "/css/*"]
+    },
+
+  "routes": [
+    {
+      "route": "/ECOrder/ShipItemScan",
+      "allowedRoles": [ "anonymous" ]
+    },
+    {
+      "route": "/",
+      "allowedRoles": ["anonymous"]
+    }
+  ],
+  "responseOverrides": {
+    "401": {
+      "statusCode": 302,
+      "redirect": "/"
+    }
+  }
+  //"globalHeaders": {
+  //  "Access-Control-Allow-Origin": "*",
+  //  "Access-Control-Allow-Methods": "POST, GET, OPTIONS"
+  // }
+}
