@@ -47,7 +47,7 @@
         <div class="form-row">
             <div class="form-group col-6">
                 <label class="mb-0" for="BarCodeValue">バーコード値</label>
-                <input class="form-control" id="BarCodeValue" @bind-value="@BarCodeValue" @bind-value:event="oninput" @onkeyup="@BarCodeScan" placeholder="バーコードをスキャン" autofocus />
+                <input class="form-control" id="BarCodeValue" @bind-value="@BarCodeValue" @bind-value:event="oninput" @onkeyup="@BarCodeScan" placeholder="@BarCodeNameplace" autofocus />
             </div>
         </div>
         <div class="form-row">
@@ -169,6 +169,7 @@
     private bool isClickProcessingFlag = false;
     private bool searchProcessingFlag = false;
     private string BarCodeValue = null;
+    private string BarCodeNameplace = "トータルピックをスキャン";
 
     private async Task BarCodeScan(KeyboardEventArgs e)
     {
@@ -190,10 +191,11 @@
                 if (BarCodeValue.Length == 13)
                 {
                     await GetPickingHead();
+                    BarCodeNameplace = "商品バーコードをスキャン";
                 }
                 else
                 {
-                    BarCodeValue = null;
+                    BarCodeValue = "";
                     await JSRuntime.InvokeAsync<string>("alert", "トータルピッキングリストのバーコードではありません。");
                 }
             }
@@ -318,6 +320,7 @@
         if(PickingList.Count == 0){
             await JSRuntime.InvokeAsync<string>("alert", $"検品がすべて完了しました。");
             //画面初期化
+            BarCodeNameplace = "トータルピックをスキャン";
             PickingDetail = new PickingDetail()
             {
                 shipItemList = new List<ShipItem>()
