@@ -49,6 +49,12 @@
                 <label class="mb-0" for="BarCodeValue">バーコード値</label>
                 <input class="form-control" id="BarCodeValue" @bind-value="@BarCodeValue" @bind-value:event="oninput" @onkeyup="@BarCodeScan" placeholder="@BarCodeNameplace" autofocus />
             </div>
+            <div class="form-group col-6">
+            @if (searchProcessingFlag)
+            {
+                <p class="mt-5"><em>Loading...</em></p>
+            }
+            </div>
         </div>
         <div class="form-row">
             <select class="form-group col-6" id="ShippingPointCode" @bind="@ShippingPointCode" required>
@@ -175,11 +181,13 @@
     {
         if (e.Code == "Enter" || e.Code == "NumpadEnter")
         {
+            searchProcessingFlag = true;
             //半角英数字、ハイフン、アンダーバーのみ許容する
             if (!Regex.IsMatch(BarCodeValue, @"^[0-9a-zA-Z-_]+$"))
             {
                 await JSRuntime.InvokeAsync<string>("alert", "読み取り不可の文字が入力されています。");
                 BarCodeValue = "";
+                searchProcessingFlag = false;
                 return;
             }
             //スキャナーがスタートキャラクタを読み取る仕様の場合、頭と最後の「A」を取り除く
@@ -227,6 +235,7 @@
                     {
                         BarCodeValue = "";
                         await JSRuntime.InvokeAsync<string>("alert", "不正なバーコードを読み取りました。");
+                        searchProcessingFlag = false;
                         return;
                     }
                     //検品カウントアップ
@@ -237,12 +246,12 @@
                     }
                 }
             }
+            searchProcessingFlag = false;
         }
     }
 
     private async Task GetPickingHead()
     {
-        searchProcessingFlag = true;
         logger.LogInformation(ShippingPointCode);
         PickingList = await Http.GetFromJsonAsync<List<PickingHead>>($"api/pickingHead/show/?BarCodeValue={BarCodeValue}&ShippingPointCode={ShippingPointCode}");
         if (PickingList.Count == 0)
@@ -251,6 +260,7 @@
             await JSRuntime.InvokeAsync<string>("alert", "該当のバーコードは検品済み、もしくは対象外です。");
             BarCodeValue = "";
             logger.LogInformation(BarCodeValue);
+            searchProcessingFlag = true;
             return;
         }
         else
@@ -262,8 +272,8 @@
 
     private async Task GetPickingDetail()
     {
+        
         PickingDetailList = await Http.GetFromJsonAsync<List<PickingDetail>>($"api/pickingDetail/show/?ShipID={PickingList.First().CompanyCode + PickingList.First().PickingNo}");
-
         logger.LogInformation("API Execute");
         PickingDetail = PickingDetailList.First();
         //商品明細行をクリアする
@@ -287,7 +297,6 @@
         }
         PickingDetail.shipItemList = shipItemList;
         BarCodeValue = "";
-        searchProcessingFlag = false;
     }
 
     //検品カウントアップ
