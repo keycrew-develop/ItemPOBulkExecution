@@ -3,271 +3,174 @@
 @inject HttpClient Http
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
-@inject ILogger<ShipItemScan> logger
+@inject ILogger<ProgressManagement> logger
 @using System.Text.RegularExpressions;
 
 <div class="container">
-    <h1>進捗管理表</h1>
-    
-  </div>
+    <div class="row">
+        <div class="col-4">
 
-<div class="row">
-    <div class="col-4">
-        <div class="progress">
-            <div class="progress-bar" role="progressbar" style="width: 50%;" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100">
-                <span class="progress-label">50分の100</span>
+        </div>
+        <div class="col-8">
+            @if (searchProcessingFlag)
+            {
+                <p class="mt-5"><em>Loading...</em></p>
+            }
+        </div>
+        <h1>進捗管理表</h1>
+    </div>
+    
+    <div class="row">
+        <div class="col-4">
+            <div class="">
+                <select class="form-control" id="ShippingPointCode" @bind="@ShippingPointCode" required>
+                    <option value="100">Yashio Dock</option><!--!-->
+                    <option value="110" selected>Sugito Dock</option><!--!-->
+                </select>
             </div>
         </div>
-        <div style="font-size:30px;">
-            50 / 100
-        </div>
-        <div style="font-size:30px;">
-            残50件
-        </div>
     </div>
-    <div class="col-8">
-        <table class="table">
-            <thead>
-                <tr>
-                    <th class="align-top">運送会社</th>
-                    <th class="align-top">総計</th>
-                    <th class="align-top">未</th>
-                    <th class ="align-top">済</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td class="align-middle sc-table-cell" style="width: 35%; max-width: 0;">
-                        <div>ヤマト</div>
-                    </td>
-                    <td class="align-middle sc-table-cell" style="width: 45%; max-width: 0;">
-                        <div>10</div>
-                    </td>
-                    <td class="align-middle sc-table-cell" style="width: 45%; max-width: 0;">
-                        <div>1</div>
-                    </td>
-                    <td class="align-middle sc-table-cell" style="width: 45%; max-width: 0;">
-                        <div>9</div>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-</div>
-<div class="row">
-    <div class="col-12">
 
+    <div class="row">
+        <div class="col-7">
+            <div class="progress">
+                <div class="progress-bar" role="progressbar" style="width: @ProgressPercent%;" aria-valuenow="@InspectedCount" aria-valuemin="0" aria-valuemax="@TotalCount">
+                    <span class="progress-label">@ProgressPercent%</span>
+                </div>
+                
+            </div>
+            <div style="font-size:50px;">
+                @InspectedCount / @TotalCount
+            </div>
+            <div style="font-size:50px;">
+                残 @UninspectedCount 件
+            </div>
+        </div>
+
+        <div class="col-5">
+            <h2>運送会社別進捗</h2>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th class="align-top">運送会社</th>
+                        <th class="align-top">総計</th>
+                        <th class="align-top">未</th>
+                        <th class="align-top">済</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var rowObj in TransProgressList)
+                    {
+                        <tr>
+                            <td class="align-middle sc-table-cell" style="width: 40%; max-width: 0;">
+                                <div>@rowObj.TransporterName</div>
+                            </td>
+                            <td class="align-middle sc-table-cell" style="width: 20%; max-width: 0;">
+                                <div>@rowObj.TotalCount</div>
+                            </td>
+                            <td class="align-middle sc-table-cell" style="width: 20%; max-width: 0;">
+                                <div>@rowObj.UninspectedCount</div>
+                            </td>
+                            <td class="align-middle sc-table-cell" style="width: 20%; max-width: 0;">
+                                <div>@rowObj.InspectedCount</div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
     </div>
+
+    <hr />
+
+    <div class="row">
+        <div class="col-12">
+            <h2>出荷グループ別進捗</h2>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th class="align-top">出荷グループ名</th>
+                        <th class="align-top">総計</th>
+                        <th class="align-top">未</th>
+                        <th class="align-top">済</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var rowObj in ShippingGroupProgressList)
+                    {
+                        <tr>
+                            <td class="align-middle sc-table-cell" style="width: 40%; max-width: 0;">
+                                <div>@rowObj.ShippingGroupName</div>
+                            </td>
+                            <td class="align-middle sc-table-cell" style="width: 20%; max-width: 0;">
+                                <div>@rowObj.TotalCount</div>
+                            </td>
+                            <td class="align-middle sc-table-cell" style="width: 20%; max-width: 0;">
+                                <div>@rowObj.UninspectedCount</div>
+                            </td>
+                            <td class="align-middle sc-table-cell" style="width: 20%; max-width: 0;">
+                                <div>@rowObj.InspectedCount</div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
 </div>
-<table class="table">
-    <thead>
-      
-    </thead>
-    <tbody>
-        
-    </tbody>
-</table>
 
 @code {
-    private List<PickingHead> PickingList = new List<PickingHead>();
-    private PickingDetail PickingDetail = new PickingDetail() {
-            shipItemList = new List<ShipItem>()
-    };
-    private List<PickingDetail> PickingDetailList = new List<PickingDetail>();
-    private string ScanType;
+    private List<TransProgress> TransProgressList = new List<TransProgress>();
+    private List<ShippingGroupProgress> ShippingGroupProgressList = new List<ShippingGroupProgress>();
     private string ShippingPointCode = "110";
+    private int InspectedCount;
+    private int UninspectedCount;
+    private int TotalCount;
+    private decimal ProgressPercent;
 
     private bool isClickProcessingFlag = false;
     private bool searchProcessingFlag = false;
-    private string BarCodeValue = null;
-    private string BarCodeNameplace = "トータルピックをスキャン";
 
-    private async Task BarCodeScan(KeyboardEventArgs e)
+    protected override async Task OnInitializedAsync()
     {
-        if (e.Code == "Enter" || e.Code == "NumpadEnter")
+        try
         {
-            searchProcessingFlag = true;
-            //半角英数字、ハイフン、アンダーバーのみ許容する
-            if (!Regex.IsMatch(BarCodeValue, @"^[0-9a-zA-Z-_]+$"))
-            {
-                await JSRuntime.InvokeAsync<string>("alert", "読み取り不可の文字が入力されています。");
-                BarCodeValue = "";
-                searchProcessingFlag = false;
-                return;
-            }
-            //スキャナーがスタートキャラクタを読み取る仕様の場合、頭と最後の「A」を取り除く
-            BarCodeValue = BarCodeValue.Replace("A", "");
-            //商品明細がない場合、検品開始時のスキャンモードになる
-            if (PickingDetail.shipItemList.Count == 0)
-            {
-                logger.LogInformation(BarCodeValue);
-                if (BarCodeValue.Length == 13)
-                {
-                    await GetPickingHead();
-                    BarCodeNameplace = "商品バーコードをスキャン";
-                }
-                else
-                {
-                    BarCodeValue = "";
-                    await JSRuntime.InvokeAsync<string>("alert", "トータルピッキングリストのバーコードではありません。");
-                }
-            }
-            //商品JANコードのスキャンモード
-            else
-            {
-                //検品スキップバーコード読み取り
-                if(BarCodeValue == "ssskipppp")
-                {
-                    await SkipItemScan();
-                }
-                //チラシユニバーサルコード読み取り
-                else if (BarCodeValue == "ffflyerrr")
-                {
-                    await ShipItemCountUp(PickingDetail.shipItemList.Where(item => item.DelivSlipNonPrintFlag == true).ToList());
-                }
-                else
-                {
-                    //JANコードが同一の商品を抽出する
-                    var scanItemList = PickingDetail.shipItemList.Where(item => item.GTINCode == BarCodeValue).ToList();
-                    //商品コードでも抽出できないか確認する
-                    if (scanItemList.Count() == 0)
-                    {
-                        PickingDetail.shipItemList.Where(item => item.ItemNo == BarCodeValue).ToList();
-                    }
-
-                    //該当商品がない場合、エラーポップアップを出す
-                    if (scanItemList.Count() == 0)
-                    {
-                        BarCodeValue = "";
-                        await JSRuntime.InvokeAsync<string>("alert", "不正なバーコードを読み取りました。");
-                        searchProcessingFlag = false;
-                        return;
-                    }
-                    //検品カウントアップ
-                    else
-                    {
-                        await ShipItemCountUp(scanItemList);
-
-                    }
-                }
-            }
-            searchProcessingFlag = false;
+            await GetTransProgress();
+            await GetShippingGroupProgress();
+        }
+        catch (Exception e)
+        {
+            logger.LogInformation(e.Message);
         }
     }
 
-    private async Task GetPickingHead()
+
+    private async Task GetTransProgress()
     {
-        logger.LogInformation(ShippingPointCode);
-        PickingList = await Http.GetFromJsonAsync<List<PickingHead>>($"api/pickingHead/show/?BarCodeValue={BarCodeValue}&ShippingPointCode={ShippingPointCode}");
-        if (PickingList.Count == 0)
+        searchProcessingFlag = true;
+        TransProgressList = await Http.GetFromJsonAsync<List<TransProgress>>($"api/TransProgresses/?ShippingPointCode={ShippingPointCode}");
+        foreach(var row in TransProgressList)
         {
-            logger.LogInformation("バーコード対象外");
-            await JSRuntime.InvokeAsync<string>("alert", "該当のバーコードは検品済み、もしくは対象外です。");
-            BarCodeValue = "";
-            logger.LogInformation(BarCodeValue);
-            searchProcessingFlag = true;
-            return;
-        }
-        else
-        {
-            await GetPickingDetail();
-        }
-
-    }
-
-    private async Task GetPickingDetail()
-    {
-        
-        PickingDetailList = await Http.GetFromJsonAsync<List<PickingDetail>>($"api/pickingDetail/show/?ShipID={PickingList.First().CompanyCode + PickingList.First().PickingNo}");
-        logger.LogInformation("API Execute");
-        PickingDetail = PickingDetailList.First();
-        //商品明細行をクリアする
-        if (PickingDetail.shipItemList != null)
-        {
-            PickingDetail.shipItemList.Clear();
-        }
-        var shipItemList = new List<ShipItem>();
-        //商品明細の値をセットする
-        foreach (var row in PickingDetailList)
-        {
-            var shipItem = new ShipItem();
-            shipItem.GTINCode = row.GTINCode;
-            shipItem.ItemNo = row.ItemNo;
-            shipItem.ItemName = row.ItemName;
-            shipItem.ItemImage = row.ItemImage;
-            shipItem.DelivSlipNonPrintFlag = row.DelivSlipNonPrintFlag;
-            shipItem.QtyPrint = row.QtyPrint;
-            shipItem.QtyPick = row.QtyPick;
-            shipItemList.Add(shipItem);
-        }
-        PickingDetail.shipItemList = shipItemList;
-        BarCodeValue = "";
-    }
-
-    //検品カウントアップ
-    private async Task ShipItemCountUp(List<ShipItem> scanItemList)
-    {
-
-        var scanItem = scanItemList.Where(item => item.QtyPrint != item.QtyPick);
-        if (scanItem.Count() == 0)
-        {
-            await JSRuntime.InvokeAsync<string>("alert", $"{BarCodeValue}は数量オーバーです。");
-            BarCodeValue = "";
-        }
-        else
-        {
-            scanItem.First().QtyPick++;
-            BarCodeValue = "";
-            StateHasChanged();
-        }
-        //現在のピッキング対象が検品完了した場合
-        if (PickingDetail.shipItemList.Count() == PickingDetail.shipItemList.Where(item => item.QtyPrint == item.QtyPick).ToList().Count())
-        {
-            bool OKFlag = await JSRuntime.InvokeAsync<bool>("confirm", "検品が完了しました。次の検品に進んでください。");
-            if (OKFlag)
+            if(row.TransporterName == "計")
             {
-                //検品ステータスを更新する
-                await PickingDetailUpdate();
+                TotalCount = row.TotalCount;
+                InspectedCount = row.InspectedCount;
+                UninspectedCount = row.UninspectedCount;
+                ProgressPercent = Math.Ceiling(Convert.ToDecimal(((decimal)row.InspectedCount / (decimal)row.TotalCount) * 100));
+                logger.LogInformation(ProgressPercent.ToString());
             }
         }
-        //全てのピッキング対象が検品完了した場合、完了ポップアップを出す
-        if(PickingList.Count == 0){
-            await JSRuntime.InvokeAsync<string>("alert", $"検品がすべて完了しました。");
-            //画面初期化
-            BarCodeNameplace = "トータルピックをスキャン";
-            PickingDetail = new PickingDetail()
-            {
-                shipItemList = new List<ShipItem>()
-            };
-        }
+
+        searchProcessingFlag = false; 
+        logger.LogInformation("api executed");
     }
 
-    //検品スキップ
-    private async Task SkipItemScan()
+    private async Task GetShippingGroupProgress()
     {
-        bool OKFlag = await JSRuntime.InvokeAsync<bool>("confirm", "検品スキップしますか？\r\n スキップしたピッキングは検品済みになります。");
-        if (OKFlag)
-        {
-            //現在は検品スキップの挙動が固まっていないため、検品済みにする
-            await PickingDetailUpdate();
-        }
-    }
-
-    private async Task PickingDetailUpdate()
-    {
-        BarCodeValue = "";
-        var PickingData = PickingList.Where(pd => pd.CompanyCode + pd.PickingNo == PickingDetail.ShipID).ToList().First();
-        var data = new { ShipID = PickingData.CompanyCode + PickingData.PickingNo };
-        var result = await Http.PutAsJsonAsync(
-            $"api/pickingDetail/update/{PickingData.CompanyCode + PickingData.PickingNo}",
-            data);
-        //検品完了したピッキングデータをHeadから削除する
-        PickingList.Remove(PickingData);
-        //まだ検品残がある場合Detailを抽出する
-        if (PickingList.Count > 0)
-        {
-            await GetPickingDetail();
-        }
+        searchProcessingFlag = true;
+        ShippingGroupProgressList = await Http.GetFromJsonAsync<List<ShippingGroupProgress>>($"api/ShippingProgresses/?ShippingPointCode={ShippingPointCode}");
+        searchProcessingFlag = false;
     }
 
     private string DetailRowCssClass(ShipItem shipItem)
