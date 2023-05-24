@@ -30,6 +30,7 @@ using System.Globalization;
 using Microsoft.AspNetCore.Authorization;
 using static System.Net.WebRequestMethods;
 using System.Net.Mime;
+using System.Diagnostics;
 
 namespace Api
 {
@@ -57,50 +58,91 @@ namespace Api
                 if (YamatoSagawaList.Count == 0)
                 {
                     ProgressList.Add(new Data.TransProgress
-                        {
-                            TransporterName = "ヤマト運輸",
-                            TotalCount = 0,
-                            UninspectedCount = 0,
-                            InspectedCount = 0
-                        }
+                    {
+                        TransporterName = "ヤマト運輸",
+                        TotalCount = 0,
+                        UninspectedCount = 0,
+                        InspectedCount = 0
+                    }
                     );
                     ProgressList.Add(new Data.TransProgress
-                        {
-                            TransporterName = "佐川急便",
-                            TotalCount = 0,
-                            UninspectedCount = 0,
-                            InspectedCount = 0
-                        }
+                    {
+                        TransporterName = "佐川急便",
+                        TotalCount = 0,
+                        UninspectedCount = 0,
+                        InspectedCount = 0
+                    }
+                    );
+                    ProgressList.Add(new Data.TransProgress
+                    {
+                        TransporterName = "日本郵便",
+                        TotalCount = 0,
+                        UninspectedCount = 0,
+                        InspectedCount = 0
+                    }
                     );
                 }
-                else if (YamatoSagawaList.Count == 1)
-                {
-                    foreach (var row in YamatoSagawaList)
-                    {
-                        if (row.TransporterName == "ヤマト運輸")
-                        {
-                            ProgressList.Add(row);
-                            ProgressList.Add(new Data.TransProgress
-                            {
-                                TransporterName = "佐川急便",
-                                TotalCount = 0,
-                                UninspectedCount = 0,
-                                InspectedCount = 0
-                            });
-                        }
-                        else
-                        {
-                            ProgressList.Add(new Data.TransProgress
-                            {
-                                TransporterName = "ヤマト運輸",
-                                TotalCount = 0,
-                                UninspectedCount = 0,
-                                InspectedCount = 0
-                            });
-                            ProgressList.Add(row);
-                        }
-                    }
-                }
+                //else if (YamatoSagawaList.Count == 1)
+                //{
+                //    switch (YamatoSagawaList.First().TransporterName)
+                //    {
+                //        case "ヤマト運輸":
+                //            ProgressList.Add(YamatoSagawaList.First());
+                //            ProgressList.Add(new Data.TransProgress
+                //            {
+                //                TransporterName = "佐川急便",
+                //                TotalCount = 0,
+                //                UninspectedCount = 0,
+                //                InspectedCount = 0
+                //            });
+                //            ProgressList.Add(new Data.TransProgress
+                //            {
+                //                TransporterName = "日本郵便",
+                //                TotalCount = 0,
+                //                UninspectedCount = 0,
+                //                InspectedCount = 0
+                //            });
+                //            break;
+                //        case "佐川急便":
+                //            ProgressList.Add(new Data.TransProgress
+                //            {
+                //                TransporterName = "ヤマト運輸",
+                //                TotalCount = 0,
+                //                UninspectedCount = 0,
+                //                InspectedCount = 0
+                //            });
+                //            ProgressList.Add(YamatoSagawaList.First());
+                //            ProgressList.Add(new Data.TransProgress
+                //            {
+                //                TransporterName = "日本郵便",
+                //                TotalCount = 0,
+                //                UninspectedCount = 0,
+                //                InspectedCount = 0
+                //            });
+                //            break;
+                //        case "日本郵便":
+                //            ProgressList.Add(new Data.TransProgress
+                //            {
+                //                TransporterName = "ヤマト運輸",
+                //                TotalCount = 0,
+                //                UninspectedCount = 0,
+                //                InspectedCount = 0
+                //            });
+                //            ProgressList.Add(new Data.TransProgress
+                //            {
+                //                TransporterName = "佐川急便",
+                //                TotalCount = 0,
+                //                UninspectedCount = 0,
+                //                InspectedCount = 0
+                //            });
+                //            ProgressList.Add(YamatoSagawaList.First());
+                //            break;
+                //    }
+                //}
+                //else if (YamatoSagawaList.Count == 2)
+                //{
+                    
+                //}
                 else
                 {
                     foreach (var row in YamatoSagawaList)
@@ -157,13 +199,23 @@ namespace Api
 
         public List<Data.TransProgress> GetYamatoSagawaProgresses(DBManager dbmanager,string ShippingPointCode, ILogger log)
         {
-            var YamatoSagawaTransporterQuery = @"SELECT            CASE WHEN LEFT(TransporterCode, 1) = 1 THEN 'ヤマト運輸' WHEN LEFT(TransporterCode, 1) = 2 THEN '佐川急便'
-					                                                --WHEN LEFT(TransporterCode, 1) = 3 THEN '日本郵便' 
-					                                                WHEN LEFT(TransporterCode, 1) >=3 THEN 'その他' END AS TransporterName, COUNT(*) AS TotalCount, SUM(CASE WHEN pickingstatecode = '400' THEN 1 ELSE 0 END) AS UninspectedCount, SUM(CASE WHEN pickingstatecode = '500' THEN 1 ELSE 0 END) AS InspectedCount
-                                                FROM              dbo.VW_PickingHed
-                                                WHERE             (DateShip >= @Today) AND (DateScheShip >=@Today) AND (ShippingPointCode = @ShippingPointCode) AND (LEFT(TransporterCode, 1) IN ('1', '2')) OR
-                                                                       (DateShip IS NULL) AND (DateScheShip >= @Today) AND (ShippingPointCode = @ShippingPointCode) AND (LEFT(TransporterCode, 1) IN ('1', '2'))
-                                                GROUP BY       LEFT(TransporterCode, 1)";
+            var YamatoSagawaTransporterQuery = @"SELECT            TransporterName, SUM(TotalCount) AS TotalCount, SUM(UninspectedCount) AS UninspectedCount, SUM(InspectedCount) AS InspectedCount
+                                                FROM  (SELECT            CASE WHEN LEFT(TransporterCode, 1) = 1 THEN 'ヤマト運輸' WHEN LEFT(TransporterCode, 1) = 2 THEN '佐川急便' WHEN LEFT(TransporterCode, 1) = 3 THEN '日本郵便' WHEN LEFT(TransporterCode, 1) 
+                                                                        >= 4 THEN 'その他' END AS TransporterName, COUNT(*) AS TotalCount, SUM(CASE WHEN pickingstatecode = '400' THEN 1 ELSE 0 END) AS UninspectedCount, SUM(CASE WHEN pickingstatecode = '500' THEN 1 ELSE 0 END) AS InspectedCount
+                                                FROM              dbo.TW_PickingHed
+                                                WHERE             (ShippingPointCode = @ShippingPointCode) AND (LEFT(TransporterCode, 1) IN ('1', '2'))
+                                                GROUP BY       LEFT(TransporterCode, 1)
+
+                                                UNION ALL
+
+                                                SELECT            CASE WHEN LEFT(TransporterCode, 1) = 1 THEN 'ヤマト運輸' WHEN LEFT(TransporterCode, 1) = 2 THEN '佐川急便' WHEN LEFT(TransporterCode, 1) = 3 THEN '日本郵便' WHEN LEFT(TransporterCode, 1) 
+                                                                        >= 4 THEN 'その他' END AS TransporterName, COUNT(*) AS TotalCount, SUM(CASE WHEN pickingstatecode = '400' THEN 1 ELSE 0 END) AS UninspectedCount, 
+                                                                        SUM(CASE WHEN pickingstatecode = '500' THEN 1 ELSE 0 END) AS InspectedCount
+                                                FROM              dbo.TW_zPickingHed
+                                                WHERE             (ShippingPointCode = @ShippingPointCode) AND (LEFT(TransporterCode, 1) IN ('1', '2')) AND (DateShip >= @Today)
+                                                GROUP BY       LEFT(TransporterCode, 1)
+                                                ) as derivedtbl_1
+                                                GROUP BY TransporterName";
 
             log.LogInformation("YamatoSagawaSQL BeforeExecute");
 
@@ -176,11 +228,17 @@ namespace Api
 
         public List<Data.TransProgress> GetOtherTransporterProgresses(DBManager dbmanager, string ShippingPointCode, ILogger log)
         {
-            var OtherTransporterQuery = @"SELECT            'その他' AS TransporterName, COUNT(*) AS TotalCount, ISNULL(SUM(CASE WHEN pickingstatecode = '400' THEN 1 ELSE 0 END), 0) AS UninspectedCount, 
-                                                                       ISNULL(SUM(CASE WHEN pickingstatecode = '500' THEN 1 ELSE 0 END), 0) AS InspectedCount
-                                                FROM              dbo.VW_PickingHed
-                                                WHERE             (DateShip >= @Today) AND (DateScheShip >= @Today) AND (ShippingPointCode = @ShippingPointCode) AND (NOT (LEFT(TransporterCode, 1) IN ('1', '2'))) OR
-                                                                       (DateShip IS NULL) AND (DateScheShip >= @Today) AND (ShippingPointCode = @ShippingPointCode) AND (NOT (LEFT(TransporterCode, 1) IN ('1', '2')))";
+            var OtherTransporterQuery = @"SELECT            TransporterName, SUM(TotalCount) AS TotalCount, SUM(UninspectedCount) AS UninspectedCount, SUM(InspectedCount) AS InspectedCount
+                                        FROM              (SELECT            'その他' AS TransporterName, COUNT(*) AS TotalCount, ISNULL(SUM(CASE WHEN pickingstatecode = '400' THEN 1 ELSE 0 END), 0) AS UninspectedCount, 
+                                                                                        ISNULL(SUM(CASE WHEN pickingstatecode = '500' THEN 1 ELSE 0 END), 0) AS InspectedCount
+                                                                FROM               dbo.TW_zPickingHed
+                                                                WHERE              (DateShip >= @Today) AND (ShippingPointCode = @ShippingPointCode) AND (NOT (LEFT(TransporterCode, 1) IN ('1', '2')))
+                                                                UNION ALL
+                                                                SELECT            'その他' AS TransporterName, COUNT(*) AS TotalCount, ISNULL(SUM(CASE WHEN pickingstatecode = '400' THEN 1 ELSE 0 END), 0) AS UninspectedCount, 
+                                                                                       ISNULL(SUM(CASE WHEN pickingstatecode = '500' THEN 1 ELSE 0 END), 0) AS InspectedCount
+                                                                FROM              dbo.TW_PickingHed
+                                                                WHERE             (ShippingPointCode = @ShippingPointCode) AND (NOT (LEFT(TransporterCode, 1) IN ('1', '2')))) AS derivedtbl_1
+                                        GROUP BY       TransporterName";
 
             log.LogInformation("OtherTransporterSQL BeforeExecute");
 
@@ -193,11 +251,17 @@ namespace Api
 
         public List<Data.TransProgress> GetTotalProgresses(DBManager dbmanager, string ShippingPointCode, ILogger log)
         {
-            var TotalQuery = @"SELECT            '計' AS TransporterName, COUNT(*) AS TotalCount, SUM(CASE WHEN pickingstatecode = '400' THEN 1 ELSE 0 END) AS UninspectedCount, SUM(CASE WHEN pickingstatecode = '500' THEN 1 ELSE 0 END) 
-                                                    AS InspectedCount
-                            FROM              dbo.VW_PickingHed
-                            WHERE             (DateShip >= @Today) AND (DateScheShip >= @Today) AND (ShippingPointCode = @ShippingPointCode) OR
-                                                    (DateShip IS NULL) AND (DateScheShip >= @Today) AND (ShippingPointCode = @ShippingPointCode)
+            var TotalQuery = @"SELECT            TransporterName, SUM(TotalCount) AS TotalCount, SUM(UninspectedCount) AS UninspectedCount, SUM(InspectedCount) AS InspectedCount
+                            FROM              (SELECT            '計' AS TransporterName, COUNT(*) AS TotalCount, ISNULL(SUM(CASE WHEN pickingstatecode = '400' THEN 1 ELSE 0 END), 0) AS UninspectedCount, 
+                                                                            ISNULL(SUM(CASE WHEN pickingstatecode = '500' THEN 1 ELSE 0 END), 0) AS InspectedCount
+                                                    FROM               dbo.TW_zPickingHed
+                                                    WHERE              (DateShip >= @Today) AND (ShippingPointCode = @ShippingPointCode)
+                                                    UNION ALL
+                                                    SELECT            '計' AS TransporterName, COUNT(*) AS TotalCount, ISNULL(SUM(CASE WHEN pickingstatecode = '400' THEN 1 ELSE 0 END), 0) AS UninspectedCount, 
+                                                                            ISNULL(SUM(CASE WHEN pickingstatecode = '500' THEN 1 ELSE 0 END), 0) AS InspectedCount
+                                                    FROM              dbo.TW_PickingHed
+                                                    WHERE             (ShippingPointCode = @ShippingPointCode)) AS derivedtbl_1
+                            GROUP BY       TransporterName
 ";
 
             log.LogInformation("TotalSQL BeforeExecute");

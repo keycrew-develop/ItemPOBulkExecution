@@ -9,15 +9,11 @@
 <div class="container">
     <div class="row">
         <div class="col-4">
-
+            <h1>進捗管理表</h1>
         </div>
         <div class="col-8">
-            @if (searchProcessingFlag)
-            {
-                <p class="mt-5"><em>Loading...</em></p>
-            }
+            
         </div>
-        <h1>進捗管理表</h1>
     </div>
     
     <div class="row">
@@ -29,10 +25,20 @@
                 </select>
             </div>
         </div>
+        <div class="col-4">
+            <div class="" style="cursor:pointer;" @onclick="@(()=>GetData())">
+                <img src="/img/reload.svg" />
+                @if (searchProcessingFlag)
+                {
+                    <span class="mt-5"><em>Loading...</em></span>
+                }
+            </div>
+        </div>
     </div>
 
     <div class="row">
         <div class="col-7">
+            <h2>総進捗</h2>
             <div class="progress">
                 <div class="progress-bar" role="progressbar" style="width: @ProgressPercent%;" aria-valuenow="@InspectedCount" aria-valuemin="0" aria-valuemax="@TotalCount">
                     <span class="progress-label">@ProgressPercent%</span>
@@ -41,6 +47,9 @@
             </div>
             <div style="font-size:50px;">
                 @InspectedCount / @TotalCount
+            </div>
+            <div style="font-size:20px;">
+                (検品済み) / (総件数)
             </div>
             <div style="font-size:50px;">
                 残 @UninspectedCount 件
@@ -136,8 +145,7 @@
     {
         try
         {
-            await GetTransProgress();
-            await GetShippingGroupProgress();
+            await GetData();
         }
         catch (Exception e)
         {
@@ -145,6 +153,11 @@
         }
     }
 
+    private async Task GetData()
+    {
+        await GetTransProgress();
+        await GetShippingGroupProgress();
+    }
 
     private async Task GetTransProgress()
     {
@@ -157,7 +170,14 @@
                 TotalCount = row.TotalCount;
                 InspectedCount = row.InspectedCount;
                 UninspectedCount = row.UninspectedCount;
-                ProgressPercent = Math.Ceiling(Convert.ToDecimal(((decimal)row.InspectedCount / (decimal)row.TotalCount) * 100));
+                if(row.TotalCount == 0)
+                {
+                    ProgressPercent = 0;
+                }
+                else
+                {
+                    ProgressPercent = Math.Ceiling(Convert.ToDecimal(((decimal)row.InspectedCount / (decimal)row.TotalCount) * 100));
+                }
                 logger.LogInformation(ProgressPercent.ToString());
             }
         }
