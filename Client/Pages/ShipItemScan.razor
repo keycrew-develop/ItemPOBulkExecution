@@ -11,9 +11,7 @@
 <div class="row">
     <div class="col-4">
         <select class="form-control" id="ScanType" @bind="@ScanType" required disabled>
-            <option value="N17">トータル検品</option><!--!-->
-            <option value="N18">オーダー検品</option><!--!-->
-            <option value="N19">AMR検品</option><!--!-->
+            <option value="S19">一括入荷処理</option><!--!-->
         </select>
         <table class="table">
             <thead>
@@ -68,7 +66,7 @@
 
         <div class="form-row">
             <div class="form-group col-6">
-                <label class="mb-0" for="ShippingGroupName">出荷グループ名</label>
+                <label class="mb-0" for="ShippingGroupName">商品コード</label>
                 <input class="form-control" id="ShippingGroupName" @bind-value="@PickingDetail.ShippingGroupName" placeholder="" disabled />
             </div>
             <div class="form-group col-6">
@@ -115,11 +113,27 @@
     <thead>
         <tr>
             <th></th>
-            <th class="align-top">JANコード</th>
+            <th class="align-top">会社名</th>
+            <th class="align-top">在庫場所</th>
             <th class="align-top">商品コード</th>
             <th class="align-top">商品名</th>
-            <th class="align-top">出荷数</th>
-            <th class="align-top">検品数</th>
+             <th class="align-top">JANコード</th>
+            <th class="align-top">識別コード</th>
+            <th class="align-top">商品区</th>
+            <th class="align-top">消費期限</th>
+            <th class="align-top">発注数</th>
+            <th class="align-top">入荷数</th>
+             <th class="align-top">ロケーションNo</th>
+            <th class="align-top">縦</th>
+            <th class="align-top">横</th>
+            <th class="align-top">高</th>
+            <th class="align-top">付帯作業</th>
+             <th class="align-top">発注No</th>
+            <th class="align-top">発注日</th>
+            <th class="align-top">入荷予定</th>
+            <th class="align-top">仕入先</th>
+            <th class="align-top">区分</th>
+            <th class="align-top">進捗</th>
             <th>SKU数：@PickingDetail.shipItemList.Count() 件</th>
         </tr>
     </thead>
