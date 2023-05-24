@@ -169,7 +169,7 @@
     private async Task GetShippingGroupProgress()
     {
         searchProcessingFlag = true;
-        ShippingGroupProgressList = await Http.GetFromJsonAsync<List<ShippingGroupProgress>>($"api/ShippingProgresses/?ShippingPointCode={ShippingPointCode}");
+        ShippingGroupProgressList = await Http.GetFromJsonAsync<List<ShippingGroupProgress>>($"api/ShippingGroupProgresses/?ShippingPointCode={ShippingPointCode}");
         searchProcessingFlag = false;
     }
 
