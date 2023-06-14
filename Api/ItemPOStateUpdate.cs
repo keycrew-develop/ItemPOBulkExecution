@@ -62,6 +62,8 @@ namespace Api  //納期確定ステータス更新
                 }
             }
 
+            return new OkObjectResult("OK");
+
             // 応答の作成
             // ...
         }

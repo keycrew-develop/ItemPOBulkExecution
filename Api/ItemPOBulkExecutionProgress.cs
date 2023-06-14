@@ -25,22 +25,40 @@ namespace Api  //入荷情報詳細
                 var sql = "dbo.SFM_S19_ItemPOListArrival";
                 var ItemPOList = req.Query["ItemPOList"];
 
-                using (var conn = new SqlConnection(defaultConnection))
+                log.LogInformation(Environment.GetEnvironmentVariable("DefaultDBConnection"));
+                using (var conn = new SqlConnection("Server=desktop-primergy.local;Initial Catalog=SC100_2023-06-07T01-51Z;MultipleActiveResultSets=true;User ID=scadmin;Password=;Pooling=true;Max Pool Size=200;Min Pool Size=10;Connection Timeout=180"))
                 {
                     conn.Open();
 
                     var parameters = new DynamicParameters();
+                    parameters.Add("@StaffCode", "950");
                     parameters.Add("@Cmd", "ItemPOList");
                     parameters.Add("@CompanyCode", "");
                     parameters.Add("@ItemNo", "");
+                    parameters.Add("@ViewStateCode", "10");
+                    parameters.Add("@ShippingPointCode", "110");
+                    parameters.Add("@Msg", dbType: DbType.String, direction: ParameterDirection.Output, size: 1000);
+                    parameters.Add("@Msg", dbType: DbType.String, direction: ParameterDirection.Output, size: 1000);
 
+                    
+                        /*
+                        ,@CompanyCode=N''
+                        ,@ItemNo=N''
+                        ,@GTINCode=N''
+                        ,@DatePOEntryFrom=N''
+                        ,@DatePOEntryTo=N''
+                        ,@DateDelivPromiseFrom=N''
+                        ,@DateDelivPromiseTo=N''
+                        ,@TopValue=50000
+                        ,@UT_WHTask=@p14
+                        */
 
-                    conn.Execute(sql, parameters, commandType: CommandType.StoredProcedure);
+                    var rows = conn.Query<dynamic>(sql, parameters, commandType: CommandType.StoredProcedure);
 
-                    var outputMessage = parameters.Get<string>("@Msg");
-                    var itemPOGroupList = parameters.Get<List<Data.ItemPOBulkExecutionProgress>>("@UT_WHTask");
+                    // var outputMessage = parameters.Get<string>("@Msg");
+                    // var itemPOGroupList = parameters.Get<List<Data.ItemPOBulkExecutionProgress>>("@UT_WHTask");
 
-                    return new ObjectResult(itemPOGroupList);
+                    return new ObjectResult(rows);
                 }
             }
             catch (Exception ex)
