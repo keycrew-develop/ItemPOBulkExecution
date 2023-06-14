@@ -35,9 +35,9 @@ namespace Api
 {
     public class PickingDetail : ControllerBase
     {
-
+        //DefaultDBConnection=環境変数（GitでDB名を表示させると不正アクセスされるため）
         private readonly string defaultConnection = Environment.GetEnvironmentVariable("DefaultDBConnection");
-
+        //local.settings.json
         [FunctionName("PickingDetailShow")]
         public ObjectResult Run(
                 [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "pickingDetail/show")] HttpRequest req,

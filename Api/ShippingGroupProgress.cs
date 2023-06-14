@@ -85,7 +85,7 @@ namespace Api
 
             log.LogInformation("ShippingGroupSQL BeforeExecute");
 
-            var ShippingGroupList = dbmanager.sqlConnection.Query<Data.ShippingGroupProgress>(ShippingGroupTransporterQuery, new { ShippingPointCode = ShippingPointCode, Today = DateTime.UtcNow.ToString("yyyy-MM-dd") }).AsList();
+            var ShippingGroupList = dbmanager.sqlConnection.Query<Data.ShippingGroupProgress>(ShippingGroupTransporterQuery, new { ShippingPointCode, Today = DateTime.UtcNow.ToString("yyyy-MM-dd") }).AsList();
             log.LogInformation("ShippingGroupSQL Executed");
 
             

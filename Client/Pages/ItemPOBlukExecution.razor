@@ -1,0 +1,148 @@
+﻿@page "/ItemPOBlukExecution/List"
+@using Data;
+@inject HttpClient Http
+@inject IJSRuntime JSRuntime
+@inject NavigationManager Navigation
+@inject ILogger<ItemPOBlukExecution> logger
+@using System.Text.RegularExpressions;
+@using System.Linq;
+@using System.ComponentModel.DataAnnotations;
+@using Microsoft.EntityFrameworkCore;
+
+
+<h2>入荷処理</h2>
+
+<div class="Company col-12">
+    <table>
+        @foreach(var item in ItemPODataInfo)
+        {
+            <tr>
+                <th class="col-4" style="font-size:25px">@item.CompanyName</th>
+                <th class="col-4" style="font-size:25px">@item.CompanyCode</th>
+            </tr>
+        }
+    </table>
+</div>
+
+
+
+<table class="table">
+    <thead>
+        <tr style="background-color: #f2f2f2; border: 2px solid #ddd; padding: 8px; text-align: left; font-size: 13px;">
+
+            <th class="align-left">商品名</th>
+            <th class="align-left">商品コード</th>
+             <th class="align-left">JANコード</th>
+            <th class="align-left">発注数</th>
+            <th class="align-left">入荷数</th>
+             <th class="align-left">ロケーションNo</th>
+            <th class="align-left">縦</th>
+            <th class="align-left">横</th>
+            <th class="align-left">高</th>
+            <th class="align-left">付帯</th>
+             <th class="align-left">消費期限</th>
+            <th class="align-left">区分</th>
+            <th class="align-left">入荷予定日</th>
+            <th class="align-left">進捗</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in ItemPODataInfo)
+        { 
+             <tr style="padding: 8px; font-size: 13px;">
+                    <td class="align-left">
+                        <div>@item.CommodityName</div> 
+                    </td>
+                    <td class="align-left">
+                        <div>@item.CommodityCode</div>
+                    </td>
+                    <td class="align-left">
+                        <div>@item.GTINCode</div>
+                    </td>
+                    <td class="align-left">
+                        <div>@item.TotalOrder</div>
+                    </td>
+                    <td class="align-left">
+                        <div>@item.TotalArrival</div>
+                    </td>
+                    <td class="align-left">
+                        <select>
+                            <option>@item.LocationNo</option>
+                        </select>
+                    </td>
+                    <td class="align-left">
+                        <div>@item.Vertical</div>
+                    </td>
+                    <td class="align-left">
+                        <div>@item.Horizontal</div>
+                    </td>
+                    <td class="align-left">
+                        <div>@item.Height</div>
+                    </td>
+                    <td class="align-left">
+                        <select>
+                            <option>@item.Incidental</option>
+                        </select>
+                    </td>
+                    <td class="align-left">
+                        <div>@item.ExpirationDate</div>
+                    </td>
+                    <td class="align-left">
+                        <select>
+                            <option>@item.Catagory</option>
+                        </select>
+                    </td>
+                    <td class="align-left">
+                        <div>@item.ArrivalDay</div>
+                    </td>
+                    <td class="align-left">
+                        <div>@item.Progress</div>
+                    </td>
+            </tr>
+        }
+        
+    </tbody>
+    
+</table>
+
+<footer class="">
+    <button class="btn btn-primary rounded-pill" style="background-color: #00B8BE; border-color: #00B8BE;">保存</button>
+</footer>
+
+
+<p>JAN、ロケーション、三辺サイズはこの画面で変更できるようにする</p>
+
+
+@*<button class="btn btn-primary rounded-pill ml-3" style="background-color: #00B8BE; border-color: #00B8BE;" @onclick="@ExportFile"><span class="mx-2">入荷済み情報をエクスポート</span></button>*@
+
+@code {
+    private List<ItemPOBulkExecutionProgress> ItemPODataInfo = new List<ItemPOBulkExecutionProgress>();
+    private string ItemPOCode = "110";
+    private bool searchProcessingFlag = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            await GetData();
+        }
+        catch (Exception e)
+        {
+            logger.LogInformation(e.Message);
+        }
+
+    }
+
+    private async Task GetData()
+    {
+        await GetItemPOData();
+    }
+
+    private async Task GetItemPOData()
+    {
+        searchProcessingFlag = true;
+        ItemPODataInfo = await Http.GetFromJsonAsync<List<ItemPOBulkExecutionProgress>>($"api/ItemPOBulkExecutionProgresses/?ItemPOList={ItemPOCode}");
+        searchProcessingFlag = false;
+    }
+
+}

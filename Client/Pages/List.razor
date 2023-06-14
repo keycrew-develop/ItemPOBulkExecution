@@ -1,0 +1,172 @@
+﻿@page "/ItemPOBlukExecution"
+@using Data;
+@inject HttpClient Http
+@inject IJSRuntime JSRuntime
+@inject NavigationManager Navigation
+@inject ILogger<ItemPOBlukExecution> logger
+@using System.Text.RegularExpressions;
+@using System.Linq;
+@using System.ComponentModel.DataAnnotations;
+@using Microsoft.EntityFrameworkCore;
+
+<h2>入荷一覧</h2>
+
+
+<div class="form-row">
+    <div class="col-6">
+            <select class="form-control col-3" id="ItemPOCode" @bind="@ItemPOCode" required>
+                <option value="100">Yashio Dock</option><!--!-->
+                <option value="110" selected>Sugito Dock</option><!--!-->
+            </select>
+    </div>
+
+</div>
+
+
+<form>
+    <div class="form-row">
+        <div class="form-group col-2">
+            <label class="mb-0" for="ItemNo">会社コード</label>
+            <input class="form-control" id="CompanyNo" placeholder="会社コードを入力" />
+        </div>
+        
+        <div class="form-group col-2">
+            <label class="mb-0" for="ItemNo">会社名</label>
+            <input class="form-control" id="CompanyName" placeholder="会社名を入力" />
+        </div>
+        <div class="form-group col-2">
+            <label class="mb-0" for="ItemName">JANコード</label>
+            <input class="form-control" id="GTINCode" placeholder="JANを入力" />
+        </div>
+        <div class="form-group col-2">
+            <label class="mb-0" for="DateDelivRequireFrom">入荷予定日</label>
+            <input type="date" max="9999-12-31" class="form-control" id="DateDelivRequireFrom" />
+        </div>
+        <div class="form-group col-2">
+            <label class="mb-0" for="DateDelivRequireTo">問番</label>
+            <input class="form-control" id="noting" placeholder="問番を入力" />
+        </div>
+    </div>
+</form>
+
+
+
+
+    <button class="btn btn-primary rounded-pill searchData()" style="background-color: #00B8BE; border-color: #00B8BE;">検索</button>
+    <div id ="results"></div>
+
+
+
+
+<table class="table">
+    <thead>
+        <tr>
+            <th class="align-top" style="max-width: 0">会社名/会社コード</th>
+            <th class="align-top" style="width: 16%">合計入荷数</th>
+            <th class="align-top" style="width: 14%">
+                <div class="position-relative">
+                    <span class="search-list-counter position-absolute">入荷予定日</span>
+                </div>
+            </th>
+            <th class="align-top" style="width: 10%">付帯作業</th>
+            <th class="align-top" style="width: 20%">進捗</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var Datalist in ItemPODataList)
+        {
+            <tr>
+                <NavLink href="ItemPOBlukExecution/List" ActiveClass="activ-link">
+                <td class="align-middle sc-table-cell">
+                    <div>@Datalist.CompanyName</div> <!--会社名とコード-->
+                    <div>@Datalist.CompanyCode</div>
+                </td>
+                </NavLink>
+                <td class="align-middle sc-table-cell">
+                    <div>@Datalist.QtyPO</div> <!--入荷される物の合計個数-->
+                </td>
+                <td class="align-middle sc-table-cell">
+                    <div>@Datalist.Quantity</div> <!--入荷予定日-->
+                </td>
+                <td class="align-middle sc-table-cell">
+                    <div>@Datalist.WHTask</div> <!--付帯作業内容-->
+                </td>
+                <td class="align-middle text-left" >
+                    <div>@Datalist.POStateName</div> <!--入荷進捗状況-->
+                </td>
+                <td class="align-middle">
+                    <input type="checkbox" id="myCheckbox">
+                </td>
+            </tr>
+        }
+
+    </tbody>
+</table>
+
+
+
+@code{
+    private List<ItemPOBulkExecutionProgress> ItemPODataList = new List<ItemPOBulkExecutionProgress>();
+    private string ItemPOCode = "110";
+    private bool searchProcessingFlag = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            await GetData();
+        }
+        catch (Exception e)
+        {
+            logger.LogInformation(e.Message);
+        }
+
+    }
+
+    private async Task GetData()
+    {
+        await GetItemPOData();
+    }
+
+    private async Task GetItemPOData()
+    {
+        searchProcessingFlag  = true;
+        ItemPODataList = await Http.GetFromJsonAsync<List<ItemPOBulkExecutionProgress>>($"api/ItemPOBulkExecutionProgresses/?ItemPOList={ItemPOCode}");
+        searchProcessingFlag = false;
+    }
+
+    
+
+    private string GetJavaScriptCode()
+    {
+        return @"
+            <script>
+                function searchData() {
+                    var companyNo = document.getElementById('CompanyNo').value;
+                    var companyName = document.getElementById('CompanyName').value;
+                    var gtinCode = document.getElementById('GTINCode').value;
+                    var dateDelivRequireFrom = document.getElementById('DateDelivRequireFrom').value;
+                    var noting = document.getElementById('noting').value;
+
+                    // 検索処理（仮の例として、入力値を結果に表示するだけの処理を行っています）
+                    var results = document.getElementById('results');
+                    results.innerHTML = '会社コード: ' + companyNo + '<br>' +
+                                        '会社名: ' + companyName + '<br>' +
+                                        'JANコード: ' + gtinCode + '<br>' +
+                                        '入荷予定日: ' + dateDelivRequireFrom + '<br>' +
+                                        '問番: ' + noting;
+                }
+            </script>
+        ";
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var scriptElement = new MarkupString(GetJavaScriptCode());
+            JSRuntime.InvokeVoidAsync("eval", scriptElement);
+        }
+    }
+}
+}
