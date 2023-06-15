@@ -26,7 +26,7 @@ namespace Api  //入荷情報詳細
                 var ItemPOList = req.Query["ItemPOList"];
 
                 log.LogInformation(Environment.GetEnvironmentVariable("DefaultDBConnection"));
-                using (var conn = new SqlConnection("Server=desktop-primergy.local;Initial Catalog=SC100_2023-06-07T01-51Z;MultipleActiveResultSets=true;User ID=scadmin;Password=;Pooling=true;Max Pool Size=200;Min Pool Size=10;Connection Timeout=180"))
+                using (var conn = new SqlConnection("Server=desktop-primergy.local;Initial Catalog=SC100_2023-06-07T01-51Z;MultipleActiveResultSets=true;User ID=scadmin;Password=;Pooling=true;Max Pool Size=300;Min Pool Size=10;Connection Timeout=180"))
                 {
                     conn.Open();
 
