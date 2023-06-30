@@ -1,0 +1,620 @@
+﻿@page "/ItemPOBulkExecution/Show/{CompanyCode}/{ItemPONo}"
+@using Data;
+@inject HttpClient Http
+@inject IJSRuntime JSRuntime
+@inject ILogger<ItemPOBulkExecution> logger
+@inject NavigationManager NavigationManager
+@using System.Text.RegularExpressions;
+@using System.Linq;
+@using System.ComponentModel.DataAnnotations;
+@using Microsoft.EntityFrameworkCore;
+@using Microsoft.AspNetCore.Components.Web;
+@using System.Net.Http.Headers;
+@using System.Data.SqlClient;
+@using System.Text;
+@using static System.Net.WebRequestMethods;
+
+
+<h2>入荷明細</h2>
+
+
+<!--データの表示-->
+<table class="table">
+    <thead>
+        <tr style="background-color: #f2f2f2; border: 2px solid #ddd; padding: 8px; text-align: left; font-size: 13px;">
+
+            <th class="align-left">商品名/商品コード/JANコード</th>
+            <th class="align-left">発注数/入荷数</th>
+             <th class="align-left">ロケーションNo</th>
+            <th class="align-left">縦/横/高</th>
+            <th class="align-left">付帯</th>
+             <th class="align-left">消費期限</th>
+            <th class="align-left">区分</th>
+            <th class="align-left">進捗</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (selectedData != null)
+        {
+                <tr style="padding: 8px; font-size: 13px;">
+                    <td class="align-left">
+                        <div>@selectedData.ItemName</div>
+                        <div>@selectedData.ItemNo</div>
+                        <div>@selectedData.GTINCode</div>
+                    </td>
+
+                    <td class="align-left">
+                        <div>@selectedData.QtyPO/@selectedData.QtyArrival</div>
+                    </td>
+
+                    <td class="aligh-left">                     
+                        <div>@selectedData.LocaNo</div> 
+                    </td>
+
+                    <td class="aligh-left">
+                         <div>@selectedData.SizeW/@selectedData.SizeH/@selectedData.SizeD</div>
+                    </td>
+
+                    <td class="align-left">
+                        <div>@selectedData.WHTaskName</div>
+                    </td>
+
+                    <td class="align-left">
+                        <div>@selectedData.DateExpiration</div>
+                    </td>
+
+                    <td class="align-left">
+                    <div>@selectedData.ItemTypeName</div>
+                    
+                    </td>
+
+                    <td class="align-left">
+                        <div>@selectedData.POStateName</div>　　
+                    </td>
+                </tr>
+        }
+        else
+        {
+            <p>No data available.</p>
+        }
+        
+    </tbody>
+    
+</table>
+
+
+<h2>更新項目</h2>
+
+
+
+<table class="table">
+    <thead>
+        <tr style="background-color: #f2f2f2; border: 2px solid #ddd; padding: 8px; text-align: left; font-size: 13px;">
+
+            <th class="align-left">ロケーションNo</th>
+            <th class="align-left">縦/横/高</th>
+            <th class="align-left">付帯</th>
+            <th class="align-left">消費期限</th>
+            <th class="align-left">区分</th>
+            <th class="align-left">進捗</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (selectedData != null)
+        {
+            <tr style="padding: 8px; font-size: 13px;">
+
+                <td class="aligh-left">
+                    @if (!string.IsNullOrEmpty(errorMessage1))
+                    {
+                        <div class="alert alert-danger">
+                            @errorMessage1
+                        </div>
+                    }
+                        <label class="mb-0" style="font-size: 13px;"></label>
+                        <input class="form-control" style="font-size: 13px;" @bind="locaNoInput">
+                    
+                    
+                    
+                </td>
+
+                <td class="aligh-left">
+                    @if (!string.IsNullOrEmpty(errorMessage2))
+                    {
+                        <div class="alert alert-danger">
+                            @errorMessage2
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(errorMessage3))
+                    {
+                        <div class="alert alert-danger">
+                            @errorMessage3
+                        </div>
+                    }
+                    
+                        <label class="mb-0" style="font-size: 13px;"></label>
+                        <input class="form-control" style="font-size: 13px;" @bind="sizeWInput">
+                        <label class="mb-0" style="font-size: 13px;"></label>
+                        <input class="form-control" style="font-size: 13px;" @bind="sizeHInput">
+                        <label class="mb-0" style="font-size: 13px;"></label>
+                        <input class="form-control" style="font-size: 13px;" @bind="sizeDInput">
+
+                    
+
+                </td>
+
+                <td class="align-left">
+                    <select multiple @bind="WHTaskCodeInput" >
+                        <option value="1000">混</option>
+                        <option value="1010">バ</option>
+                        <option value="1020">員</option>
+                        <option value="1030">プ</option>
+                        <option value="1040">プ2</option>
+                        <option value="1050">外チェ</option>
+                        <option value="1060">チラシ</option>
+                        <option value="1070">袋入れ</option>
+                        <option value="1080">賞期限</option>
+                        <option value="1090">立</option>
+                        <option value="1100">B返品</option>
+                        <option value="1110">特付</option>
+                        <option value="1120">付ワレ</option>
+                    </select>
+                </td>
+
+                <td class="align-left">
+
+                        <label class="mb-0" for="DateDelivRequireFrom"></label>
+                        <input type="date" max="9999-12-31" class="form-control" id="DateDelivRequireFrom" @bind="selectedData.DateExpiration" />
+                    
+
+                </td>
+
+                <td class="align-left">
+                    <select @bind="ItemTypeInput">
+                        @if (!string.IsNullOrEmpty(errorMessageState))
+                        {
+                            <div class="alert alert-danger">
+                                @errorMessageState
+                            </div>
+                        }
+                        <option>選択してください</option>
+                        <option value="100">商品</option>
+                        <option value="500">チラシ</option>
+                        <option value="510">梱包資材</option>
+                        <option value="520">特殊梱包資材</option>
+                    </select>
+
+                </td>
+
+                <td class="align-left">
+                    <select @bind="POStateInput">
+                        <option>選択してください</option>
+                        <option value="130">納期確定</option>
+                        <option value="150">入荷作業中</option>
+                    </select>
+                </td>
+            </tr>
+        }
+
+    </tbody>
+
+</table>
+<footer class="">
+    <button class="btn btn-primary rounded-pill" style="background-color: #00B8BE; border-color: #00B8BE;" @onclick="LocaData">ロケ更新</button>
+    <button class="btn btn-primary rounded-pill" style="background-color: #00B8BE; border-color: #00B8BE;" @onclick="SizeData">3辺更新</button>
+    <button class="btn btn-primary rounded-pill" style="background-color: #00B8BE; border-color: #00B8BE;" @onclick="WHCodeData">付帯更新</button>
+    <button class="btn btn-primary rounded-pill" style="background-color: #00B8BE; border-color: #00B8BE;" @onclick="DataExpiration">消費期限</button>
+    <button class="btn btn-primary rounded-pill" style="background-color: #00B8BE; border-color: #00B8BE;" @onclick="POTypeData">商品区分</button>
+    <button class="btn btn-primary rounded-pill" style="background-color: #00B8BE; border-color: #00B8BE;" @onclick="StateUpdate">進捗更新</button>
+    <button class="btn btn-primary rounded-pill" style="background-color: #00B8BE; border-color: #00B8BE;" @onclick="SaveData">入荷確定</button>
+</footer>
+
+
+@code {
+    //入荷詳細データの表示
+    private ItemPOBulkExecutionProgress selectedData;
+    private bool isArrivalConfirmed = false;
+    private bool searchProcessingFlag = false;
+    [Parameter]
+    public string CompanyCode { get; set; }
+    [Parameter]
+    public string ItemPONo { get; set; }
+
+
+    private List<ItemPOBulkExecutionProgress> WHTaskData = new List<ItemPOBulkExecutionProgress>();
+    private List<ItemPOBulkExecutionProgress> Data = new List<ItemPOBulkExecutionProgress>();
+    private List<ItemPOBulkExecutionProgress> FilteredData = new List<ItemPOBulkExecutionProgress>();
+
+    private string locaNoInput; // ロケーションの入力値を保持する変数
+    private string sizeWInput; // 縦の入力値を保持する変数
+    private string sizeHInput; // 横の入力値を保持する変数
+    private string sizeDInput; // 高の入力値を保持する変数
+    protected string[] WHTaskCodeInput = new string[] { };
+    private string ItemTypeInput;
+    private string POStateInput;
+    private string errorMessage1;
+    private string errorMessage2;
+    private string errorMessage3;
+    private string errorMessageState;
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        var uri = new Uri(NavigationManager.Uri);
+        var segments = uri.Segments;
+
+        if (segments.Length >= 4)
+        {
+            //CompanyCode = segments[2];
+            //ItemPONo = segments[3];
+
+            await LoadData();
+            FilterData();
+            await GetWHData();
+        }
+
+
+    }
+
+
+
+
+    private async Task LoadData()
+    {
+        // データを取得するAPIエンドポイントのURLを作成
+        string apiUrl = $"api/ItemPOBulkExecutionProgresses/?ItemPOList=10";
+        // APIからデータを取得
+        Data = await Http.GetFromJsonAsync<List<ItemPOBulkExecutionProgress>>(apiUrl);
+    }
+
+    private void FilterData()
+    {
+        // CompanyCodeとItemNoで絞り込んだデータをフィルタリング
+        FilteredData = Data.Where(item => item.CompanyCode == CompanyCode && item.ItemPONo == ItemPONo).ToList();
+        logger.LogInformation(FilteredData.Count.ToString());
+        selectedData = FilteredData.FirstOrDefault();
+        logger.LogInformation(selectedData?.ToString());
+        StateHasChanged();
+    }
+
+    private async Task GetWHData()
+    {
+        await GetWHTaskData();
+    }
+
+    private async Task GetWHTaskData()
+    {
+        searchProcessingFlag = true;
+        WHTaskData = await Http.GetFromJsonAsync<List<ItemPOBulkExecutionProgress>>($"api/WHTaskLists/?WHTaskList=10");
+        searchProcessingFlag = false;
+    }
+
+
+    //入荷作業処理、入荷確定
+
+    private async Task SaveData()
+    {
+        string apiUrl = "api/ItemPOArrivals";
+        string companyCode = selectedData.CompanyCode; // 会社コードの値を設定
+        string itemPONo = selectedData.ItemPONo; // 商品番号の値を設定
+        int qtyArrival = selectedData.QtyArrival;
+        DateTime dateDelivFinish = selectedData.DateDelivFinish;
+        string msg = "Msg";
+
+
+        var parameters = new Dictionary<string, string>
+        {
+            {"CompanyCode" , companyCode },
+            {"ItemPONo" , itemPONo},
+            {"QtyArrival", qtyArrival.ToString()},
+            {"DateDelivFinish" , dateDelivFinish.ToString()},
+            {"Msg" , msg}
+        };
+
+        var requestContent = new FormUrlEncodedContent(parameters);
+        // APIリクエストを送信
+        HttpResponseMessage response = await Http.PutAsync(apiUrl, requestContent);
+
+        if (response.IsSuccessStatusCode)
+        {
+            // 成功時の処理
+            Console.WriteLine("APIリクエストが成功しました。");
+            // 画面の更新などの処理を実行
+            StateHasChanged();
+        }
+        else
+        {
+            // エラー処理
+            errorMessage2 = await response.Content.ReadAsStringAsync();
+        }
+    }
+
+
+    //ロケーション更新
+
+    private async Task LocaData()
+    {
+        string apiUrl = "api/LocaNoUpdates";
+        string siteCode = selectedData.SiteCode;
+        string locaNo = locaNoInput;
+        string companyCode = selectedData.CompanyCode;
+        string itemPONo = selectedData.ItemPONo;
+
+        // ストアドプロシージャのパラメーターを設定
+        var parameters = new Dictionary<string, string>
+    {
+        { "SiteCode", siteCode },
+        { "LocaNo", locaNo },
+        { "CompanyCode", companyCode },
+        { "ItemPONo", itemPONo }
+    };
+
+
+
+        try
+        {
+            var requestContent = new FormUrlEncodedContent(parameters);
+            // APIリクエストを送信
+            HttpResponseMessage response = await Http.PutAsync(apiUrl,requestContent);
+
+            if (response.IsSuccessStatusCode)
+            {
+                // 成功時の処理
+                Console.WriteLine("APIリクエストが成功しました。");
+                // 画面の更新などの処理を実行
+                StateHasChanged();
+            }
+            else
+            {
+                // エラー処理
+                errorMessage1 = await response.Content.ReadAsStringAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            // 例外処理
+            errorMessage1 = "";
+        }
+    }
+
+    //3辺サイズ更新
+
+    private async Task SizeData()
+    {
+        string apiUrl = "api/M3SizeUpdates";
+        string sizeW = sizeWInput;
+        string sizeH = sizeHInput;
+        string sizeD = sizeDInput;
+        string companyCode = selectedData.CompanyCode;
+        string itemPONo = selectedData.ItemPONo;
+
+        // ストアドプロシージャのパラメーターを設定
+        var parameters = new Dictionary<string, string>
+        {
+            { "SizeW", sizeW },
+            { "SizeH", sizeH },
+            { "SizeD", sizeD },
+            { "CompanyCode", companyCode },
+            { "ItemPONo", itemPONo }
+        };
+
+
+
+        try
+        {
+            var requestContent = new FormUrlEncodedContent(parameters);
+            // APIリクエストを送信
+            HttpResponseMessage response = await Http.PutAsync(apiUrl, requestContent);
+
+            if (response.IsSuccessStatusCode)
+            {
+                // 成功時の処理
+                Console.WriteLine("APIリクエストが成功しました。");
+                // 画面の更新などの処理を実行
+                StateHasChanged();
+            }
+            else
+            {
+                // エラー処理
+                errorMessage3 = await response.Content.ReadAsStringAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            // 例外処理
+            Console.WriteLine("APIリクエストエラー: " + ex.Message);
+        }
+    }
+
+    //商品区分更新
+
+    private async Task POTypeData()
+    {
+        string apiUrl = "api/ItemTypeUpdates";
+        string companyCode = selectedData.CompanyCode;
+        string itemPONo = selectedData.ItemPONo;
+        string itemTypeName = selectedData.ItemTypeName;
+
+        // ストアドプロシージャのパラメーターを設定
+        var parameters = new Dictionary<string, string>
+        {
+            { "CompanyCode", companyCode },
+            { "ItemPONo", itemPONo },
+            { "ItemTypeCode" , string.Join("," , ItemTypeInput)}
+        };
+
+
+
+        try
+        {
+            var requestContent = new FormUrlEncodedContent(parameters);
+            // APIリクエストを送信
+            HttpResponseMessage response = await Http.PutAsync(apiUrl, requestContent);
+
+            if (response.IsSuccessStatusCode)
+            {
+                // 成功時の処理
+                Console.WriteLine("APIリクエストが成功しました。");
+                // 画面の更新などの処理を実行
+                StateHasChanged();
+            }
+            else
+            {
+                // エラー処理
+                errorMessageState = await response.Content.ReadAsStringAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            // 例外処理
+            Console.WriteLine("APIリクエストエラー: " + ex.Message);
+        }
+    }
+
+        //消費期限更新
+    private async Task DataExpiration()
+    {
+        string apiUrl = "api/DateExpirationUpdates";
+        string companyCode = selectedData.CompanyCode;
+        string itemPONo = selectedData.ItemPONo;
+        string dateExpiration = selectedData.DateExpiration.ToString();
+
+
+
+        // ストアドプロシージャのパラメーターを設定
+        var parameters = new Dictionary<string, string>
+        {
+            { "CompanyCode", companyCode },
+            { "ItemPONo", itemPONo },
+            { "DateExpiration" , dateExpiration}
+        };
+
+
+
+        try
+        {
+            var requestContent = new FormUrlEncodedContent(parameters);
+            // APIリクエストを送信
+            HttpResponseMessage response = await Http.PutAsync(apiUrl, requestContent);
+
+            if (response.IsSuccessStatusCode)
+            {
+                // 成功時の処理
+                Console.WriteLine("APIリクエストが成功しました。");
+                // 画面の更新などの処理を実行
+                StateHasChanged();
+            }
+            else
+            {
+                // エラー処理
+                Console.WriteLine("APIリクエストエラー: " + response.StatusCode);
+            }
+        }
+        catch (Exception ex)
+        {
+            // 例外処理
+            Console.WriteLine("APIリクエストエラー: " + ex.Message);
+        }
+    }
+    
+
+    //付帯作業更新
+
+    private async Task WHCodeData()
+    {
+        string apiUrl = "api/WHTaskCodeUpdates";
+        string companyCode = selectedData.CompanyCode;
+        string itemPONo = selectedData.ItemPONo;
+
+        // ストアドプロシージャのパラメーターを設定
+        var parameters = new Dictionary<string, string>
+        {
+            { "CompanyCode", companyCode },
+            { "ItemPONo", itemPONo },
+            { "WHCodeList", string.Join("," , WHTaskCodeInput) }
+        };
+
+
+
+        try
+        {
+            var requestContent = new FormUrlEncodedContent(parameters);
+            // APIリクエストを送信
+            HttpResponseMessage response = await Http.PutAsync(apiUrl, requestContent);
+
+            if (response.IsSuccessStatusCode)
+            {
+                // 成功時の処理
+                Console.WriteLine("APIリクエストが成功しました。");
+                // 画面の更新などの処理を実行
+                StateHasChanged();
+            }
+            else
+            {
+                // エラー処理
+                Console.WriteLine("APIリクエストエラー: " + response.StatusCode);
+            }
+        }
+        catch (Exception ex)
+        {
+            // 例外処理
+            Console.WriteLine("APIリクエストエラー: " + ex.Message);
+        }
+
+    }
+
+
+        //納期確定
+        private async Task StateUpdate()
+        {
+            
+            string apiUrl = "api/POStateUpdates"; // バックエンド API のエンドポイントの URL
+            string companyCode = selectedData.CompanyCode;
+            string itemPONo = selectedData.ItemPONo;
+            string poStateCode = selectedData.POStateCode;
+
+                // API リクエストに必要なパラメータを作成
+            var parameters = new Dictionary<string, string>
+            {
+                { "CompanyCode", companyCode },
+                { "ItemPONo", itemPONo },
+                { "POStateCode", POStateInput}
+            };
+
+            try
+            {
+
+                var requestContent = new FormUrlEncodedContent(parameters);
+                // APIリクエストを送信
+                HttpResponseMessage response = await Http.PutAsync(apiUrl, requestContent);
+            
+
+                // レスポンスの処理
+                if (response.IsSuccessStatusCode)
+                {
+                    // 成功時の処理
+                    Console.WriteLine("APIリクエストが成功しました。");
+                    // 画面の更新などの処理を実行
+                    StateHasChanged();
+                }
+                else
+                {
+                    // エラー処理
+                errorMessageState = await response.Content.ReadAsStringAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                // 例外処理
+                Console.WriteLine("APIリクエストエラー: " + ex.Message);
+            }
+            }
+    
+
+
+
+
+
+}
+    

@@ -6,7 +6,7 @@
 
   "routes": [
     {
-      "route": "/ItemPOBlukExecution",
+      "route": "/ItemPOBulkExecution",
       "allowedRoles": [ "anonymous" ]
     },
     {
@@ -19,9 +19,9 @@
       "statusCode": 302,
       "redirect": "/"
     }
+  },
+  "globalHeaders": {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "POST, GET, OPTIONS"
   }
-  //"globalHeaders": {
-  //  "Access-Control-Allow-Origin": "*",
-  //  "Access-Control-Allow-Methods": "POST, GET, OPTIONS"
-  // }
 }

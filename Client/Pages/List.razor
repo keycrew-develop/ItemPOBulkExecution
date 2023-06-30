@@ -1,50 +1,59 @@
-﻿@page "/ItemPOBlukExecution"
+﻿@page "/ItemPOBulkExecution"
 @using Data;
 @inject HttpClient Http
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
-@inject ILogger<ItemPOBlukExecution> logger
+@inject ILogger<ItemPOBulkExecution> logger
+@inject NavigationManager NavigationManager
 @using System.Text.RegularExpressions;
 @using System.Linq;
 @using System.ComponentModel.DataAnnotations;
 @using Microsoft.EntityFrameworkCore;
+@using System.Text;
 
 <h2>入荷一覧</h2>
 
 
 <div class="form-row">
     <div class="col-6">
-            <select class="form-control col-3" id="ItemPOCode" @bind="@ItemPOCode" required>
+        <select class="form-control col-3" id="ShippingPointCode" @bind="@ShippingPointCode" required>
                 <option value="100">Yashio Dock</option><!--!-->
                 <option value="110" selected>Sugito Dock</option><!--!-->
-            </select>
+        </select>
     </div>
-
+    
 </div>
 
 
 <form>
     <div class="form-row">
-        <div class="form-group col-2">
-            <label class="mb-0" for="ItemNo">会社コード</label>
-            <input class="form-control" id="CompanyNo" placeholder="会社コードを入力" />
+        <div class="form-group col-3">
+            <label class="mb-0" for="CompanyCode">会社コード</label>
+            <input class="form-control" id="CompanyCode" placeholder="会社コードを入力" @bind = "CompanyCode"/>    
+        </div>      
+        <div class="form-group col-3">
+            <label class="mb-0" for="CompanyName">会社名</label>
+            <input class="form-control" id="CompanyName" placeholder="会社名を入力" @bind = "CompanyNameS"/>
         </div>
-        
-        <div class="form-group col-2">
-            <label class="mb-0" for="ItemNo">会社名</label>
-            <input class="form-control" id="CompanyName" placeholder="会社名を入力" />
+        <div class="form-group col-3">
+            <label class="mb-0" for="ItemNo">品番</label>
+            <input class="form-control" id="ItemNo" placeholder="品番を入力" @bind="ItemNo" />
         </div>
-        <div class="form-group col-2">
-            <label class="mb-0" for="ItemName">JANコード</label>
-            <input class="form-control" id="GTINCode" placeholder="JANを入力" />
+        <div class="form-group col-3">
+            <label class="mb-0" for="GTINCode">JANコード</label>
+            <input class="form-control" id="GTINCode" placeholder="JANを入力" @bind = "GTINCode"/>
         </div>
-        <div class="form-group col-2">
-            <label class="mb-0" for="DateDelivRequireFrom">入荷予定日</label>
-            <input type="date" max="9999-12-31" class="form-control" id="DateDelivRequireFrom" />
+        <div class="form-group col-3">
+            <label class="mb-0" for="WHTaskName">付帯作業</label>
+            <input class="form-control" id="WHTaskName" placeholder="付帯作業を入力" @bind="WHTaskName" />
         </div>
-        <div class="form-group col-2">
-            <label class="mb-0" for="DateDelivRequireTo">問番</label>
-            <input class="form-control" id="noting" placeholder="問番を入力" />
+        <div class="form-group col-3">
+            <label class="mb-0" for="DateDelivRequireFrom">入荷予定日～</label>
+            <input type="date" max="9999-12-31" class="form-control" id="DateDelivRequireFrom" @bind = "StartDate"/>
+        </div>
+        <div class="form-group col-3">
+            <label class="mb-0" for="DateDelivRequireTo"></label>
+            <input type="date" max="9999-12-31" class="form-control" id="DateDelivRequireFrom" @bind="EndDate" />
         </div>
     </div>
 </form>
@@ -52,8 +61,7 @@
 
 
 
-    <button class="btn btn-primary rounded-pill searchData()" style="background-color: #00B8BE; border-color: #00B8BE;">検索</button>
-    <div id ="results"></div>
+    <button class="btn btn-primary rounded-pill" style="background-color: #00B8BE; border-color: #00B8BE;" @onclick ="SearchData">検索</button>
 
 
 
@@ -61,7 +69,7 @@
 <table class="table">
     <thead>
         <tr>
-            <th class="align-top" style="max-width: 0">会社名/会社コード</th>
+            <th class="align-top" style="max-width: 0">会社名/会社コード/商品名</th>
             <th class="align-top" style="width: 16%">合計入荷数</th>
             <th class="align-top" style="width: 14%">
                 <div class="position-relative">
@@ -73,33 +81,62 @@
         </tr>
     </thead>
     <tbody>
-        @foreach (var Datalist in ItemPODataList)
+        @if (FilteredItemPODataList != null)
         {
-            <tr>
-                <NavLink href="ItemPOBlukExecution/List" ActiveClass="activ-link">
-                <td class="align-middle sc-table-cell">
-                    <div>@Datalist.CompanyName</div> <!--会社名とコード-->
-                    <div>@Datalist.CompanyCode</div>
-                </td>
-                </NavLink>
-                <td class="align-middle sc-table-cell">
-                    <div>@Datalist.QtyPO</div> <!--入荷される物の合計個数-->
-                </td>
-                <td class="align-middle sc-table-cell">
-                    <div>@Datalist.Quantity</div> <!--入荷予定日-->
-                </td>
-                <td class="align-middle sc-table-cell">
-                    <div>@Datalist.WHTask</div> <!--付帯作業内容-->
-                </td>
-                <td class="align-middle text-left" >
-                    <div>@Datalist.POStateName</div> <!--入荷進捗状況-->
-                </td>
-                <td class="align-middle">
-                    <input type="checkbox" id="myCheckbox">
-                </td>
-            </tr>
-        }
+            @foreach (var Datalist in FilteredItemPODataList)
+            {
+                <tr @onclick= "() => ShowDetail(Datalist)">             
+                    <td class="align-middle sc-table-cell">
 
+                        <div>@Datalist.CompanyNameS</div> <!--会社名とコード-->
+                        <div>@Datalist.CompanyCode</div>
+                        <div>@Datalist.ItemName</div>
+                        <div>@Datalist.ArrivalTranslnvNo</div>
+                    </td>
+
+                    <td class="align-middle sc-table-cell">
+                        <div>@Datalist.QtyPO</div> <!--入荷される物の合計個数-->
+                    </td>
+                    <td class="align-middle sc-table-cell">
+                        <div>@Datalist.DateDelivPromise.ToString("yyyy/MM/dd")</div> <!--入荷予定日-->
+                    </td>
+                    <td class="align-middle sc-table-cell">
+                        <div>@Datalist.WHTaskName</div> <!--付帯作業内容-->
+                    </td>
+                    <td class="align-middle text-left" >
+                        <div>@Datalist.POStateName</div> <!--入荷進捗状況-->
+                    </td>
+                </tr>
+            }
+        }
+        else
+        {
+            @foreach (var Datalist in ItemPODataList)
+            {
+                <tr @onclick="() => ShowDetail(Datalist)">
+                    <td class="align-middle sc-table-cell">
+
+                        <div>@Datalist.CompanyNameS</div> <!--会社名とコード-->
+                        <div>@Datalist.CompanyCode</div>
+                        <div>@Datalist.ItemName</div>
+                        <div>@Datalist.ArrivalTranslnvNo</div>
+                    </td>
+
+                    <td class="align-middle sc-table-cell">
+                        <div>@Datalist.QtyPO</div> <!--入荷される物の合計個数-->
+                    </td>
+                    <td class="align-middle sc-table-cell">
+                        <div>@Datalist.DateDelivPromise.ToString("yyyy/MM/dd")</div> <!--入荷予定日-->
+                    </td>
+                    <td class="align-middle sc-table-cell">
+                        <div>@Datalist.WHTaskName</div> <!--付帯作業内容-->
+                    </td>
+                    <td class="align-middle text-left">
+                        <div>@Datalist.POStateName</div> <!--入荷進捗状況-->
+                    </td>
+                </tr>
+            }
+        }
     </tbody>
 </table>
 
@@ -107,14 +144,46 @@
 
 @code{
     private List<ItemPOBulkExecutionProgress> ItemPODataList = new List<ItemPOBulkExecutionProgress>();
-    private string ItemPOCode = "110";
+    private List<ItemPOBulkExecutionProgress> FilteredItemPODataList { get; set; }
+    private string ShippingPointCode ;
     private bool searchProcessingFlag = false;
+    private ItemPOBulkExecutionProgress selectedData;
+    private string CompanyCode;
+    private string CompanyNameS;
+    private string ItemNo;
+    private string GTINCode;
+    protected string WHTaskName { get; set; }
+    private DateTime? StartDate { get; set; } 
+    private DateTime? EndDate { get; set; } 
+    private string selectedCompanyCode;
+    private string selectedItemPONo;
+
+    private void ShowDetail(ItemPOBulkExecutionProgress data)
+    {
+        selectedCompanyCode = data.CompanyCode;
+        selectedItemPONo = data.ItemPONo;
+        NavigationManager.NavigateTo($"/ItemPOBulkExecution/Show/{Uri.EscapeDataString(selectedCompanyCode)}/{Uri.EscapeDataString(selectedItemPONo)}");
+    }
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            await GetData();
+            //ShippingPointCode = "110";
+            await GetData();      //Showページに遷移する際に、クエリパラメータからデータを取得、復元
+            Dictionary<string, string> queryParams = NavigationManager.ToAbsoluteUri(NavigationManager.Uri).Query
+                .TrimStart('?')
+                .Split('&')
+                .Select(p => p.Split('='))
+                .ToDictionary(p => p[0], p => Uri.UnescapeDataString(p[1]));
+
+
+            if (queryParams.TryGetValue("data", out string serializedData))
+            {
+                selectedData = System.Text.Json.JsonSerializer.Deserialize<ItemPOBulkExecutionProgress>(Uri.UnescapeDataString(serializedData));
+            }
+
+
         }
         catch (Exception e)
         {
@@ -131,42 +200,51 @@
     private async Task GetItemPOData()
     {
         searchProcessingFlag  = true;
-        ItemPODataList = await Http.GetFromJsonAsync<List<ItemPOBulkExecutionProgress>>($"api/ItemPOBulkExecutionProgresses/?ItemPOList={ItemPOCode}");
+        ItemPODataList = await Http.GetFromJsonAsync<List<ItemPOBulkExecutionProgress>>($"api/ItemPOBulkExecutionProgresses/?ShippingPointCode={ShippingPointCode}");
         searchProcessingFlag = false;
     }
 
-    
 
-    private string GetJavaScriptCode()
+
+
+    private void SearchData()
     {
-        return @"
-            <script>
-                function searchData() {
-                    var companyNo = document.getElementById('CompanyNo').value;
-                    var companyName = document.getElementById('CompanyName').value;
-                    var gtinCode = document.getElementById('GTINCode').value;
-                    var dateDelivRequireFrom = document.getElementById('DateDelivRequireFrom').value;
-                    var noting = document.getElementById('noting').value;
+        FilteredItemPODataList = ItemPODataList;
+        //Console.WriteLine(FilteredItemPODataList.Count());
+        //Console.WriteLine(FilteredItemPODataList.Where(d => d.ShippingPointCode == "110").ToList().Count());
 
-                    // 検索処理（仮の例として、入力値を結果に表示するだけの処理を行っています）
-                    var results = document.getElementById('results');
-                    results.innerHTML = '会社コード: ' + companyNo + '<br>' +
-                                        '会社名: ' + companyName + '<br>' +
-                                        'JANコード: ' + gtinCode + '<br>' +
-                                        '入荷予定日: ' + dateDelivRequireFrom + '<br>' +
-                                        '問番: ' + noting;
-                }
-            </script>
-        ";
-    }
-
-    protected override void OnAfterRender(bool firstRender)
-    {
-        if (firstRender)
+        
+        if (!string.IsNullOrEmpty(ShippingPointCode))
         {
-            var scriptElement = new MarkupString(GetJavaScriptCode());
-            JSRuntime.InvokeVoidAsync("eval", scriptElement);
+            FilteredItemPODataList = FilteredItemPODataList.Where(d => d.ShippingPointCode == ShippingPointCode).ToList();
+        }
+        if (!string.IsNullOrEmpty(CompanyCode))
+        {
+            FilteredItemPODataList = FilteredItemPODataList.Where(d => d.CompanyCode == CompanyCode).ToList();
+        }
+        if (!string.IsNullOrEmpty(CompanyNameS))
+        {
+            FilteredItemPODataList = FilteredItemPODataList.Where(d => d.CompanyNameS == CompanyNameS).ToList();
+        }
+        if (!string.IsNullOrEmpty(GTINCode))
+        {
+            FilteredItemPODataList = FilteredItemPODataList.Where(d => d.GTINCode == GTINCode).ToList();
+        }
+        if (!string.IsNullOrEmpty(WHTaskName))
+        {
+            FilteredItemPODataList = FilteredItemPODataList.Where(d => d.WHTaskName == WHTaskName).ToList();
+        }
+        if (StartDate.HasValue && EndDate.HasValue)
+        {
+            FilteredItemPODataList = FilteredItemPODataList.Where(d => d.DateDelivPromise >= StartDate.Value && d.DateDelivPromise <= EndDate.Value).ToList();
+        }
+        else if (StartDate.HasValue)
+        {
+            FilteredItemPODataList = FilteredItemPODataList.Where(d => d.DateDelivPromise >= StartDate.Value).ToList();
+        }
+        else if (EndDate.HasValue)
+        {
+            FilteredItemPODataList = FilteredItemPODataList.Where(d => d.DateDelivPromise <= EndDate.Value).ToList();
         }
     }
-}
 }

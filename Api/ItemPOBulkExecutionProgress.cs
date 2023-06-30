@@ -10,6 +10,7 @@ using Dapper;
 using System.Data;
 using System.Data.SqlClient;
 using Microsoft.Azure.WebJobs.Extensions.Http;
+using Microsoft.AspNetCore.Hosting.Server;
 
 namespace Api  //入荷情報詳細
 {
@@ -23,10 +24,11 @@ namespace Api  //入荷情報詳細
             try
             {
                 var sql = "dbo.SFM_S19_ItemPOListArrival";
-                var ItemPOList = req.Query["ItemPOList"];
+                var shippingPointCode = req.Query["ShippingPointCode"].ToString();
+
 
                 log.LogInformation(Environment.GetEnvironmentVariable("DefaultDBConnection"));
-                using (var conn = new SqlConnection("Server=desktop-primergy.local;Initial Catalog=SC100_2023-06-07T01-51Z;MultipleActiveResultSets=true;User ID=scadmin;Password=;Pooling=true;Max Pool Size=300;Min Pool Size=10;Connection Timeout=180"))
+                using (var conn = new SqlConnection(defaultConnection))
                 {
                     conn.Open();
 
@@ -36,8 +38,7 @@ namespace Api  //入荷情報詳細
                     parameters.Add("@CompanyCode", "");
                     parameters.Add("@ItemNo", "");
                     parameters.Add("@ViewStateCode", "10");
-                    parameters.Add("@ShippingPointCode", "110");
-                    parameters.Add("@Msg", dbType: DbType.String, direction: ParameterDirection.Output, size: 1000);
+                    //parameters.Add("@ShippingPointCode", shippingPointCode);
                     parameters.Add("@Msg", dbType: DbType.String, direction: ParameterDirection.Output, size: 1000);
 
                     
@@ -67,6 +68,8 @@ namespace Api  //入荷情報詳細
                 return new BadRequestObjectResult(new { Message = ex.Message });
             }
         }
+
+
     }
 
 
