@@ -24,14 +24,15 @@ namespace Api  //入荷情報詳細
             try
             {
                 var sql = "dbo.SFM_S19_ItemPOListArrival";
+                log.LogInformation("shippingpoint before get");
                 var shippingPointCode = req.Query["ShippingPointCode"].ToString();
-
+                log.LogInformation("shippingpoint got it");
 
                 log.LogInformation(Environment.GetEnvironmentVariable("DefaultDBConnection"));
                 using (var conn = new SqlConnection(defaultConnection))
                 {
                     conn.Open();
-
+                    log.LogInformation("connection open OK");
                     var parameters = new DynamicParameters();
                     parameters.Add("@StaffCode", "950");
                     parameters.Add("@Cmd", "ItemPOList");
@@ -41,21 +42,23 @@ namespace Api  //入荷情報詳細
                     //parameters.Add("@ShippingPointCode", shippingPointCode);
                     parameters.Add("@Msg", dbType: DbType.String, direction: ParameterDirection.Output, size: 1000);
 
-                    
-                        /*
-                        ,@CompanyCode=N''
-                        ,@ItemNo=N''
-                        ,@GTINCode=N''
-                        ,@DatePOEntryFrom=N''
-                        ,@DatePOEntryTo=N''
-                        ,@DateDelivPromiseFrom=N''
-                        ,@DateDelivPromiseTo=N''
-                        ,@TopValue=50000
-                        ,@UT_WHTask=@p14
-                        */
 
+                    /*
+                    ,@CompanyCode=N''
+                    ,@ItemNo=N''
+                    ,@GTINCode=N''
+                    ,@DatePOEntryFrom=N''
+                    ,@DatePOEntryTo=N''
+                    ,@DateDelivPromiseFrom=N''
+                    ,@DateDelivPromiseTo=N''
+                    ,@TopValue=50000
+                    ,@UT_WHTask=@p14
+                    */
+
+                    Console.WriteLine("test");
+                    log.LogInformation("stored before execute");
                     var rows = conn.Query<dynamic>(sql, parameters, commandType: CommandType.StoredProcedure);
-
+                    log.LogInformation("stored executed");
                     // var outputMessage = parameters.Get<string>("@Msg");
                     // var itemPOGroupList = parameters.Get<List<Data.ItemPOBulkExecutionProgress>>("@UT_WHTask");
 

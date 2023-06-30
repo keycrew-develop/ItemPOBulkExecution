@@ -170,8 +170,10 @@
     {
         try
         {
+            logger.LogInformation("init start");
             //ShippingPointCode = "110";
             await GetData();      //Showページに遷移する際に、クエリパラメータからデータを取得、復元
+            logger.LogInformation("init executed");
             Dictionary<string, string> queryParams = NavigationManager.ToAbsoluteUri(NavigationManager.Uri).Query
                 .TrimStart('?')
                 .Split('&')
